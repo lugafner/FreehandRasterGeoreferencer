@@ -23,6 +23,6 @@ def toRelativeToQGS(imagePath):
             # relative
             imageFolderRelPath = os.path.relpath(imageFolder, qgsFolder)
             imagePath = os.path.join(imageFolderRelPath, imageName)
-            qDebug(imagePath)
+            qDebug(imagePath.encode('utf8'))
             
     return imagePath
