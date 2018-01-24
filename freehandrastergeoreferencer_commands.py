@@ -17,7 +17,7 @@ class ExportAsRasterCommand(object):
             return
         
         rasterFormat = rasterPath[-3:]
-        if rasterFormat not in ["jpg","bmp","png"]:
+        if rasterFormat not in ["jpg","bmp","png","tif"]:
             widget = QgsMessageBar.createMessage("Export as raster", "Unsupported file format: %s" % format)
             self.iface.messageBar().pushWidget(widget,  QgsMessageBar.WARNING, 5)
             return
@@ -80,6 +80,8 @@ class ExportAsRasterCommand(object):
                 worldFilePath += "pgw"
             elif rasterFormat == "bmp":
                 worldFilePath += "bpw"
+            elif rasterFormat == "tif":
+                worldFilePath += "tfw"
                 
             with open(worldFilePath, "w") as writer:
                 writer.write("%.13f\n%.13f\n%.13f\n%.13f\n%.13f\n%.13f" % (a,b,d,e,c,f))
@@ -101,7 +103,7 @@ class ExportAsRasterCommand(object):
     def getRasterPath(self, originalPath):
         filepath,_ = os.path.splitext(originalPath)
         filepath += "_georeferenced.png" 
-        filepath = u"%s"%(QFileDialog.getSaveFileName(None, "Export as raster", filepath, "Images (*.png *.bmp *.jpg)"))
+        filepath = u"%s"%(QFileDialog.getSaveFileName(None, "Export as raster", filepath, "Images (*.png *.bmp *.jpg *.tif)"))
         return filepath
     
     def auxContent(self, crs):

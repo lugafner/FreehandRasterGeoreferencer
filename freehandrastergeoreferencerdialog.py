@@ -49,7 +49,7 @@ class FreehandRasterGeoreferencerDialog(QtGui.QDialog, Ui_FreehandRasterGeorefer
             bDir = os.path.expanduser("~")
             
         qDebug(repr(bDir))
-        filepath = u'%s'%(QFileDialog.getOpenFileName(self, "Select image", bDir, "Images (*.png *.bmp *.jpg)"))
+        filepath = u'%s'%(QFileDialog.getOpenFileName(self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif)"))
         self.lineEditImagePath.setText(filepath)
         
         if filepath:
@@ -78,7 +78,7 @@ class FreehandRasterGeoreferencerDialog(QtGui.QDialog, Ui_FreehandRasterGeorefer
         self.imagePath = self.lineEditImagePath.text()
         _, extension = os.path.splitext(self.imagePath)
         extension = string.lower(extension)
-        if not os.path.isfile(self.imagePath) or (extension != ".jpg" and extension != ".bmp" and extension != ".png"):
+        if not os.path.isfile(self.imagePath) or (extension not in [".jpg",".bmp",".png",".tif"]):
             result = False
             if len(details) > 0:
                 details += '\n'
