@@ -5,8 +5,7 @@
                                  A QGIS plugin
  Interactive georeferencing of rasters
                              -------------------
-        begin                : 2014-05-21
-        copyright            : (C) 2014 by GV
+        copyright            : (C) 2018 by Guilhem Vellut
         email                : guilhem.vellut@gmail.com
  ***************************************************************************/
 
@@ -18,10 +17,9 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
- This script initializes the plugin, making it known to QGIS.
 """
 
+
 def classFactory(iface):
-    # load FreehandRasterGeoreferencer class from file FreehandRasterGeoreferencer
     from freehandrastergeoreferencer import FreehandRasterGeoreferencer
     return FreehandRasterGeoreferencer(iface)

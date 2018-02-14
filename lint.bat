@@ -1,0 +1,1 @@
+flake8 --exclude "ui_*.py,*_rc.py"

@@ -1,15 +1,16 @@
 [general]
 name = Freehand raster georeferencer
-qgisminimumversion = 2.2
+qgisMinimumVersion = 2.2
 description = Interactive georeferencing of rasters
-version = 0.2.0
+about = Tools to georeference a raster interactively (move, rotate, scale, export...)
+version = 0.3.0
 author = Guilhem Vellut
 email = guilhem.vellut@gmail.com
-tags = 
-homepage = 
-tracker = 
-repository = 
+tags = raster,georeferencing
+homepage = http://gvellut.github.io/FreehandRasterGeoreferencer/
+tracker = https://github.com/gvellut/FreehandRasterGeoreferencer/issues
+repository = https://github.com/gvellut/FreehandRasterGeoreferencer
 icon = icon.png
 experimental = False
 deprecated = False
-
+category = Raster
