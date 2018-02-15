@@ -266,6 +266,65 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
         return (topLeft, topRight, bottomRight, bottomLeft)
 
+    def transformedCornerCoordinatesFromPoint(self, de, startPoint, rotation,
+                                              xScale, yScale):
+        # startPoint is a fixed point for this new movement (rotation and
+        # scale)
+        # rotation is the global rotation of the image
+        # xScale is the new xScale factor to be multiplied by self.xScale
+        # idem for yScale
+        # Calculate the coordinate of the center in a startPoint origin
+        # coordinate system and apply scales
+        DX = (self.center.x() - startPoint.x()) * xScale
+        DY = (self.center.y() - startPoint.y()) * yScale
+        # Half width and half height in the current transformation
+        hW = (self.image.width() / 2.0) * self.xScale * xScale
+        hH = (self.image.height() / 2.0) * self.yScale * yScale
+        # Actual rectangle coordinates :
+        pt1 = QgsPoint(-hW, hH)
+        pt2 = QgsPoint(hW, hH)
+        pt3 = QgsPoint(hW, -hH)
+        pt4 = QgsPoint(-hW, -hH)
+        # Actual rotation from the center
+        # minus sign because rotation is CW in this class and Qt)
+        rotationRad = -self.rotation * math.pi / 180
+        cosRot = math.cos(rotationRad)
+        sinRot = math.sin(rotationRad)
+        pt1 = self._rotate(pt1, cosRot, sinRot)
+        pt2 = self._rotate(pt2, cosRot, sinRot)
+        pt3 = self._rotate(pt3, cosRot, sinRot)
+        pt4 = self._rotate(pt4, cosRot, sinRot)
+        # Second transformation
+        # displacement of the origin
+        pt1 = QgsPoint(pt1.x() + DX, pt1.y() + DY)
+        pt2 = QgsPoint(pt2.x() + DX, pt2.y() + DY)
+        pt3 = QgsPoint(pt3.x() + DX, pt3.y() + DY)
+        pt4 = QgsPoint(pt4.x() + DX, pt4.y() + DY)
+        # Rotation
+        # minus sign because rotation is CW in this class and Qt)
+        rotationRad = -rotation * math.pi / 180
+        cosRot = math.cos(rotationRad)
+        sinRot = math.sin(rotationRad)
+        pt1 = self._rotate(pt1, cosRot, sinRot)
+        pt2 = self._rotate(pt2, cosRot, sinRot)
+        pt3 = self._rotate(pt3, cosRot, sinRot)
+        pt4 = self._rotate(pt4, cosRot, sinRot)
+        # translate to startPoint
+        pt1 = QgsPoint(pt1.x() + startPoint.x(), pt1.y() + startPoint.y())
+        pt2 = QgsPoint(pt2.x() + startPoint.x(), pt2.y() + startPoint.y())
+        pt3 = QgsPoint(pt3.x() + startPoint.x(), pt3.y() + startPoint.y())
+        pt4 = QgsPoint(pt4.x() + startPoint.x(), pt4.y() + startPoint.y())
+
+        return (pt1, pt2, pt3, pt4)
+
+    def _moveCenterFromPointRotate(self, startPoint, rotation, xScale, yScale):
+        cornerPoints = self.transformedCornerCoordinatesFromPoint(
+            "applyChanges", startPoint, rotation, xScale, yScale)
+        self.center = QgsPoint((cornerPoints[0].x(
+        ) + cornerPoints[2].x()) / 2, (cornerPoints[0].y() +
+                                       cornerPoints[2].y()) / 2)
+# S
+
     def _rotate(self, point, cosRot, sinRot):
         return QgsPoint(point.x() * cosRot - point.y() * sinRot,
                         point.x() * sinRot + point.y() * cosRot)
@@ -354,6 +413,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         filepath = self.getAbsoluteFilepath()
         filepath = os.path.normpath(filepath)
         lines.append(fmt % (self.tr("Path"), filepath))
+        lines.append(fmt % (self.tr("Image Width"), str(self.image.width())))
+        lines.append(fmt % (self.tr("Image Height"), str(self.image.height())))
         lines.append(fmt % (self.tr("Rotation (CW)"), str(self.rotation)))
         lines.append(fmt % (self.tr("X center"), str(self.center.x())))
         lines.append(fmt % (self.tr("Y center"), str(self.center.y())))

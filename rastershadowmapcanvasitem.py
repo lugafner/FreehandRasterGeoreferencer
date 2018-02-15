@@ -65,6 +65,18 @@ class RasterShadowMapCanvasItem(QgsMapCanvasItem):
 
         self.setRect(QgsRectangle(left, bottom, right, top))
 
+    def updateRectFromPoint(self, startPoint):
+        topLeft, topRight, bottomRight, bottomLeft = \
+            self.cornerCoordinatesFromPoint(startPoint)
+
+        left = min(topLeft.x(), topRight.x(), bottomRight.x(), bottomLeft.x())
+        right = max(topLeft.x(), topRight.x(), bottomRight.x(), bottomLeft.x())
+        top = max(topLeft.y(), topRight.y(), bottomRight.y(), bottomLeft.y())
+        bottom = min(topLeft.y(), topRight.y(),
+                     bottomRight.y(), bottomLeft.y())
+
+        self.setRect(QgsRectangle(left, bottom, right, top))
+
     def cornerCoordinates(self):
         center = QgsPoint(self.layer.center.x() + self.dx,
                           self.layer.center.y() + self.dy)

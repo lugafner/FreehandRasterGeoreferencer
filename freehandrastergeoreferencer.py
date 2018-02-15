@@ -20,8 +20,10 @@ from freehandrastergeoreferencer_commands import ExportAsRasterCommand
 from freehandrastergeoreferencer_layer import \
     FreehandRasterGeoreferencerLayerType, FreehandRasterGeoreferencerLayer
 from freehandrastergeoreferencer_maptools import MoveRasterMapTool,\
-    RotateRasterMapTool, ScaleRasterMapTool, AdjustRasterMapTool
+    RotateRasterMapTool, ScaleRasterMapTool, AdjustRasterMapTool,\
+    GeorefRasterBy2PointsMapTool
 from freehandrastergeoreferencerdialog import FreehandRasterGeoreferencerDialog
+import resources_rc  # noqa
 import utils
 
 
@@ -84,6 +86,14 @@ class FreehandRasterGeoreferencer(object):
         self.actionAdjustRaster.triggered.connect(self.adjustRaster)
         self.actionAdjustRaster.setCheckable(True)
 
+        self.actionGeoref2PRaster = QAction(
+            QIcon(":/plugins/freehandrastergeoreferencer/icon2Points.png"),
+            u"Georeference raster with 2 points", self.iface.mainWindow())
+        self.actionGeoref2PRaster.setObjectName(
+            "FreehandRasterGeoreferencingLayerPlugin_Georef2PRaster")
+        self.actionGeoref2PRaster.triggered.connect(self.georef2PRaster)
+        self.actionGeoref2PRaster.setCheckable(True)
+
         self.actionIncreaseTransparency = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/"
                   "iconTransparencyIncrease.png"),
@@ -118,6 +128,7 @@ class FreehandRasterGeoreferencer(object):
         self.toolbar.addAction(self.actionRotateRaster)
         self.toolbar.addAction(self.actionScaleRaster)
         self.toolbar.addAction(self.actionAdjustRaster)
+        self.toolbar.addAction(self.actionGeoref2PRaster)
         self.toolbar.addAction(self.actionDecreaseTransparency)
         self.toolbar.addAction(self.actionIncreaseTransparency)
         self.toolbar.addAction(self.actionExport)
@@ -136,6 +147,8 @@ class FreehandRasterGeoreferencer(object):
         self.scaleTool.setAction(self.actionScaleRaster)
         self.adjustTool = AdjustRasterMapTool(self.iface)
         self.adjustTool.setAction(self.actionAdjustRaster)
+        self.georef2PTool = GeorefRasterBy2PointsMapTool(self.iface)
+        self.georef2PTool.setAction(self.actionGeoref2PRaster)
         self.currentTool = None
 
         # default state for toolbar
@@ -177,6 +190,7 @@ class FreehandRasterGeoreferencer(object):
             self.actionRotateRaster.setEnabled(True)
             self.actionScaleRaster.setEnabled(True)
             self.actionAdjustRaster.setEnabled(True)
+            self.actionGeoref2PRaster.setEnabled(True)
             self.actionDecreaseTransparency.setEnabled(True)
             self.actionIncreaseTransparency.setEnabled(True)
             self.actionExport.setEnabled(True)
@@ -189,6 +203,7 @@ class FreehandRasterGeoreferencer(object):
             self.actionRotateRaster.setEnabled(False)
             self.actionScaleRaster.setEnabled(False)
             self.actionAdjustRaster.setEnabled(False)
+            self.actionGeoref2PRaster.setEnabled(False)
             self.actionDecreaseTransparency.setEnabled(False)
             self.actionIncreaseTransparency.setEnabled(False)
             self.actionExport.setEnabled(False)
@@ -246,6 +261,12 @@ class FreehandRasterGeoreferencer(object):
         layer = self.iface.legendInterface().currentLayer()
         self.adjustTool.setLayer(layer)
         self.iface.mapCanvas().setMapTool(self.adjustTool)
+
+    def georef2PRaster(self):
+        self.currentTool = self.georef2PTool
+        layer = self.iface.legendInterface().currentLayer()
+        self.georef2PTool.setLayer(layer)
+        self.iface.mapCanvas().setMapTool(self.georef2PTool)
 
     def increaseTransparency(self):
         layer = self.iface.legendInterface().currentLayer()
