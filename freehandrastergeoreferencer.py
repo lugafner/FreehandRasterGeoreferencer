@@ -118,7 +118,7 @@ class FreehandRasterGeoreferencer(object):
         # Add toolbar button and menu item for AddLayer
         self.iface.layerToolBar().addAction(self.actionAddLayer)
         self.iface.insertAddLayerAction(self.actionAddLayer)
-        self.iface.addPluginToMenu(
+        self.iface.addPluginToRasterMenu(
             FreehandRasterGeoreferencer.PLUGIN_MENU, self.actionAddLayer)
 
         # create toolbar for this plugin
