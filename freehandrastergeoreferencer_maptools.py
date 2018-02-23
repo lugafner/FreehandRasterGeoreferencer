@@ -280,6 +280,9 @@ class ScaleRasterMapTool(QgsMapToolEmitPoint):
         self.height = float(self.canvas.height())
         self.width = float(self.canvas.width())
 
+        modifiers = QApplication.keyboardModifiers()
+        self.isKeepRelativeScale = bool(modifiers & Qt.ControlModifier)
+
         self.isLayerVisible = self.iface.legendInterface().isLayerVisible(
             self.layer)
         self.iface.legendInterface().setLayerVisible(self.layer, False)
@@ -317,7 +320,11 @@ class ScaleRasterMapTool(QgsMapToolEmitPoint):
         xScale = 1.0 - (dX / (self.width * 1.1))
         yScale = 1.0 - (dY / (self.height * 1.1))
 
-        return (xScale, yScale)
+        if self.isKeepRelativeScale:
+            # keep same scale in both dimensions
+            return (xScale, xScale)
+        else:
+            return (xScale, yScale)
 
     def showScaling(self, xScale, yScale):
         if xScale == 0 and yScale == 0:
