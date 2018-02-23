@@ -266,7 +266,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
         return (topLeft, topRight, bottomRight, bottomLeft)
 
-    def transformedCornerCoordinatesFromPoint(self, de, startPoint, rotation,
+    def transformedCornerCoordinatesFromPoint(self, startPoint, rotation,
                                               xScale, yScale):
         # startPoint is a fixed point for this new movement (rotation and
         # scale)
@@ -275,8 +275,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         # idem for yScale
         # Calculate the coordinate of the center in a startPoint origin
         # coordinate system and apply scales
-        DX = (self.center.x() - startPoint.x()) * xScale
-        DY = (self.center.y() - startPoint.y()) * yScale
+        dX = (self.center.x() - startPoint.x()) * xScale
+        dY = (self.center.y() - startPoint.y()) * yScale
         # Half width and half height in the current transformation
         hW = (self.image.width() / 2.0) * self.xScale * xScale
         hH = (self.image.height() / 2.0) * self.yScale * yScale
@@ -296,10 +296,10 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         pt4 = self._rotate(pt4, cosRot, sinRot)
         # Second transformation
         # displacement of the origin
-        pt1 = QgsPoint(pt1.x() + DX, pt1.y() + DY)
-        pt2 = QgsPoint(pt2.x() + DX, pt2.y() + DY)
-        pt3 = QgsPoint(pt3.x() + DX, pt3.y() + DY)
-        pt4 = QgsPoint(pt4.x() + DX, pt4.y() + DY)
+        pt1 = QgsPoint(pt1.x() + dX, pt1.y() + dY)
+        pt2 = QgsPoint(pt2.x() + dX, pt2.y() + dY)
+        pt3 = QgsPoint(pt3.x() + dX, pt3.y() + dY)
+        pt4 = QgsPoint(pt4.x() + dX, pt4.y() + dY)
         # Rotation
         # minus sign because rotation is CW in this class and Qt)
         rotationRad = -rotation * math.pi / 180
@@ -317,9 +317,9 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
         return (pt1, pt2, pt3, pt4)
 
-    def _moveCenterFromPointRotate(self, startPoint, rotation, xScale, yScale):
+    def moveCenterFromPointRotate(self, startPoint, rotation, xScale, yScale):
         cornerPoints = self.transformedCornerCoordinatesFromPoint(
-            "applyChanges", startPoint, rotation, xScale, yScale)
+            startPoint, rotation, xScale, yScale)
         self.center = QgsPoint((cornerPoints[0].x(
         ) + cornerPoints[2].x()) / 2, (cornerPoints[0].y() +
                                        cornerPoints[2].y()) / 2)

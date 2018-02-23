@@ -47,6 +47,13 @@ class RasterShadowMapCanvasItem(QgsMapCanvasItem):
             self.updateRect()
             self.update()
 
+    def setDeltaRotationFromPoint(self, rotation, startPoint, doUpdate):
+        # Rotation around a point other than center of raster
+        self.drotation = rotation
+        if doUpdate:
+            self.updateRectFromPoint(startPoint)
+            self.update()
+
     def setDeltaScale(self, xscale, yscale, doUpdate):
         self.fxscale = xscale
         self.fyscale = yscale
@@ -84,6 +91,10 @@ class RasterShadowMapCanvasItem(QgsMapCanvasItem):
                                                        self.layer.rotation,
                                                        self.layer.xScale,
                                                        self.layer.yScale)
+
+    def cornerCoordinatesFromPoint(self, startPoint):
+        return self.layer.transformedCornerCoordinatesFromPoint(
+            startPoint, self.drotation, 1, 1)
 
     def paint(self, painter, options, widget):
         painter.save()
