@@ -1,0 +1,1 @@
+zip -r fhrgr.zip . -x ".*" -x "*/.*"
