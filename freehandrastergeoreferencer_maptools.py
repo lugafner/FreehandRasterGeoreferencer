@@ -504,7 +504,7 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
         self.layer = layer
 
     def reset(self):
-        self.startPoint = self.endPoint = None
+        self.startPoint = self.endPoint = self.firstPoint = None
         self.isEmittingPoint = False
         self.rubberBandOrigin.reset(QGis.Point)
         self.rubberBandDisplacement.reset(QGis.Line)
@@ -513,6 +513,7 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
         self.layer = None
 
     def deactivate(self):
+        QgsMapToolEmitPoint.deactivate(self)
         self.reset()
 
     def canvasPressEvent(self, e):
@@ -607,7 +608,7 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
             self.showRotationScale(rotation, xScale, yScale)
 
     def computeRotation(self):
-        # S The angle is the difference between angle
+        # The angle is the difference between angle
         # horizontal/endPoint-firstPoint and horizontal/startPoint-firstPoint.
         dX0 = self.startPoint.x() - self.firstPoint.x()
         dY0 = self.startPoint.y() - self.firstPoint.y()
@@ -616,7 +617,7 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
         return math.degrees(math.atan2(-dY, dX) - math.atan2(-dY0, dX0))
 
     def computeScale(self):
-        # S The scale is the ratio between endPoint-firstPoint and
+        # The scale is the ratio between endPoint-firstPoint and
         # startPoint-firstPoint.
         dX0 = self.startPoint.x() - self.firstPoint.x()
         dY0 = self.startPoint.y() - self.firstPoint.y()
@@ -688,4 +689,3 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
         x = point.x() + self.endPoint.x() - self.startPoint.x()
         y = point.y() + self.endPoint.y() - self.startPoint.y()
         self.rubberBandExtent.addPoint(QgsPoint(x, y), doUpdate)
-# S
