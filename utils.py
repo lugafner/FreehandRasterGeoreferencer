@@ -37,3 +37,11 @@ def toRelativeToQGS(imagePath):
             qDebug(imagePath.encode('utf8'))
 
     return imagePath
+
+
+def tryfloat(strF):
+    try:
+        f = float(strF)
+        return f
+    except ValueError:
+        return None

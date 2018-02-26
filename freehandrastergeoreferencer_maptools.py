@@ -14,11 +14,13 @@ import math
 from operator import itemgetter
 
 from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QApplication
+from PyQt4.QtGui import QApplication, QInputDialog, QMessageBox
 from qgis.core import QGis, QgsPoint, QgsGeometry
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 
+
 from rastershadowmapcanvasitem import RasterShadowMapCanvasItem
+from utils import tryfloat
 
 
 class MoveRasterMapTool(QgsMapToolEmitPoint):
@@ -274,36 +276,65 @@ class ScaleRasterMapTool(QgsMapToolEmitPoint):
         self.layer = None
 
     def canvasPressEvent(self, e):
-        self.startPoint = e.pos()
-        self.endPoint = self.startPoint
-        self.isEmittingPoint = True
-        self.height = float(self.canvas.height())
-        self.width = float(self.canvas.width())
+        pressed_button = e.button()
+        if pressed_button == 1:
+            self.startPoint = e.pos()
+            self.endPoint = self.startPoint
+            self.isEmittingPoint = True
+            self.height = float(self.canvas.height())
+            self.width = float(self.canvas.width())
 
-        modifiers = QApplication.keyboardModifiers()
-        self.isKeepRelativeScale = bool(modifiers & Qt.ControlModifier)
+            modifiers = QApplication.keyboardModifiers()
+            self.isKeepRelativeScale = bool(modifiers & Qt.ControlModifier)
 
-        self.isLayerVisible = self.iface.legendInterface().isLayerVisible(
-            self.layer)
-        self.iface.legendInterface().setLayerVisible(self.layer, False)
+            self.isLayerVisible = self.iface.legendInterface().isLayerVisible(
+                self.layer)
+            self.iface.legendInterface().setLayerVisible(self.layer, False)
 
-        scaling = self.computeScaling()
-        self.showScaling(*scaling)
+            scaling = self.computeScaling()
+            self.showScaling(*scaling)
 
     def canvasReleaseEvent(self, e):
-        self.isEmittingPoint = False
+        pressed_button = e.button()
+        if pressed_button == 1:
+            self.isEmittingPoint = False
 
-        self.rubberBandExtent.reset(QGis.Line)
-        self.rasterShadow.reset()
+            self.rubberBandExtent.reset(QGis.Line)
+            self.rasterShadow.reset()
 
-        xScale, yScale = self.computeScaling()
-        self.layer.setScale(xScale * self.layer.xScale,
-                            yScale * self.layer.yScale)
+            xScale, yScale = self.computeScaling()
+            self.layer.setScale(xScale * self.layer.xScale,
+                                yScale * self.layer.yScale)
 
-        self.iface.legendInterface().setLayerVisible(self.layer,
-                                                     self.isLayerVisible)
+            self.iface.legendInterface().setLayerVisible(self.layer,
+                                                         self.isLayerVisible)
+        elif pressed_button == 2:
+            number, ok = QInputDialog.getText(
+                None, u'Scale & DPI', u'Enter scale,dpi (e.g. 3000,96)')
+            if not ok:
+                return
+            scales = number.split(',')
+            if len(scales) != 2:
+                QMessageBox.information(
+                    self.iface.mainWindow(),
+                    u'Error',
+                    u'Must be 2 numbers')
+                return
+            scale = tryfloat(scales[0])
+            dpi = tryfloat(scales[1])
+            if scale and dpi:
+                xScale = scale / (dpi / 0.0254)
+                yScale = xScale
+            else:
+                QMessageBox.information(
+                    self.iface.mainWindow(),
+                    u'Error',
+                    u'Bad format: Must be scale,dpi (e.g. 3000,96)')
+                return
+
+            self.layer.setScale(xScale, yScale)
+
         self.layer.repaint()
-
         self.layer.commitTransformParameters()
 
     def canvasMoveEvent(self, e):
