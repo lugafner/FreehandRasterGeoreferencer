@@ -158,7 +158,7 @@ class FreehandRasterGeoreferencer(object):
         # Remove the plugin menu item and icon
         self.iface.layerToolBar().removeAction(self.actionAddLayer)
         self.iface.removeAddLayerAction(self.actionAddLayer)
-        self.iface.removePluginMenu(
+        self.iface.removePluginRasterMenu(
             FreehandRasterGeoreferencer.PLUGIN_MENU, self.actionAddLayer)
 
         # Unregister plugin layer type
