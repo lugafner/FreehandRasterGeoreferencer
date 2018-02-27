@@ -11,26 +11,23 @@
 """
 
 import os.path
-import string
 
-from PyQt4 import QtGui
-from PyQt4.QtCore import qDebug, QObject, SIGNAL
-from PyQt4.QtGui import QFileDialog, QMessageBox
+from PyQt5.QtCore import qDebug
+from PyQt5.QtWidgets import QDialog, QFileDialog, QMessageBox
 from qgis.core import QgsProject
 
-from ui_freehandrastergeoreferencer import Ui_FreehandRasterGeoreferencer
-import utils
+from .ui_freehandrastergeoreferencer import Ui_FreehandRasterGeoreferencer
+from . import utils
 
 
-class FreehandRasterGeoreferencerDialog(QtGui.QDialog,
+class FreehandRasterGeoreferencerDialog(QDialog,
                                         Ui_FreehandRasterGeoreferencer):
 
     def __init__(self):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         self.setupUi(self)
 
-        QObject.connect(self.pushButtonBrowse, SIGNAL(
-            "clicked()"), self.showBrowserDialog)
+        self.pushButtonBrowse.clicked.connect(self.showBrowserDialog)
 
     def clear(self):
         self.lineEditImagePath.setText("")
@@ -41,9 +38,9 @@ class FreehandRasterGeoreferencerDialog(QtGui.QDialog,
         if not found:
             bDir = os.path.expanduser("~")
 
-        qDebug(repr(bDir))
-        filepath = u'%s' % (QFileDialog.getOpenFileName(
-            self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif)"))
+        qDebug(bDir.encode())
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif)")
         self.lineEditImagePath.setText(filepath)
 
         if filepath:
@@ -55,10 +52,10 @@ class FreehandRasterGeoreferencerDialog(QtGui.QDialog,
     def accept(self):
         result, message, details = self.validate()
         if result:
-            self.done(QtGui.QDialog.Accepted)
+            self.done(QDialog.Accepted)
         else:
-            msgBox = QtGui.QMessageBox()
-            msgBox.setWindowTitle(u"Error")
+            msgBox = QMessageBox()
+            msgBox.setWindowTitle("Error")
             msgBox.setText(message)
             msgBox.setDetailedText(details)
             msgBox.setStandardButtons(QMessageBox.Ok)
@@ -71,13 +68,13 @@ class FreehandRasterGeoreferencerDialog(QtGui.QDialog,
 
         self.imagePath = self.lineEditImagePath.text()
         _, extension = os.path.splitext(self.imagePath)
-        extension = string.lower(extension)
+        extension = extension.lower()
         if not os.path.isfile(self.imagePath) or \
                 (extension not in [".jpg", ".bmp", ".png", ".tif"]):
             result = False
             if len(details) > 0:
-                details += '\n'
-            details += u"The path must be an image file"
+                details += "\n"
+            details += "The path must be an image file"
 
         if not result:
             message = "There were errors in the form"

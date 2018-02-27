@@ -13,9 +13,10 @@
 import math
 import os.path
 
-from PyQt4.QtCore import qDebug, QRectF, QPointF, QSize
-from PyQt4.QtGui import QImage, QPainter, QColor, QFileDialog
-from qgis.core import QgsMessageLog
+from PyQt5.QtCore import qDebug, QRectF, QPointF, QSize
+from PyQt5.QtGui import QImage, QPainter, QColor
+from PyQt5.QtWidgets import QFileDialog
+from qgis.core import QgsMessageLog, Qgis
 from qgis.gui import QgsMessageBar
 
 
@@ -113,7 +114,7 @@ class ExportAsRasterCommand(object):
 
             widget = QgsMessageBar.createMessage(
                 "Raster Geoferencer", "Raster exported successfully.")
-            self.iface.messageBar().pushWidget(widget,  QgsMessageBar.INFO, 2)
+            self.iface.messageBar().pushWidget(widget,  Qgis.Info, 2)
         except Exception as ex:
             QgsMessageLog.logMessage(repr(ex))
             widget = QgsMessageBar.createMessage(
@@ -121,15 +122,15 @@ class ExportAsRasterCommand(object):
                 "There was an error performing this command. "
                 "See QGIS Message log for details.")
             self.iface.messageBar().pushWidget(
-                widget,  QgsMessageBar.CRITICAL, 5)
+                widget, Qgis.Critical, 5)
             return
 
     def getRasterPath(self, originalPath):
         filepath, _ = os.path.splitext(originalPath)
         filepath += "_georeferenced.png"
-        filepath = u"%s" % (QFileDialog.getSaveFileName(
+        filepath, _ = QFileDialog.getSaveFileName(
             None, "Export as raster", filepath,
-            "Images (*.png *.bmp *.jpg *.tif)"))
+            "Images (*.png *.bmp *.jpg *.tif)")
         return filepath
 
     def auxContent(self, crs):
@@ -145,5 +146,5 @@ class ExportAsRasterCommand(object):
     </GeodataXform>
   </Metadata>
 </PAMDataset>"""  # noqa
-        geogOrProj = "Geographic" if crs.geographicFlag() else "Projected"
+        geogOrProj = "Geographic" if crs.isGeographic() else "Projected"
         return content % (geogOrProj, crs.toWkt())

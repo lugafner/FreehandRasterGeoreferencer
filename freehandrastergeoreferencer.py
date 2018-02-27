@@ -12,42 +12,39 @@
 
 import os.path
 
-from PyQt4.QtCore import QObject, SIGNAL
-from PyQt4.QtGui import QAction, QIcon
-from qgis.core import QgsMapLayerRegistry, QgsPluginLayerRegistry, QgsMapLayer
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction
+from qgis.core import QgsApplication, QgsMapLayer, QgsProject
 
-from freehandrastergeoreferencer_commands import ExportAsRasterCommand
-from freehandrastergeoreferencer_layer import \
+from .freehandrastergeoreferencer_commands import ExportAsRasterCommand
+from .freehandrastergeoreferencer_layer import \
     FreehandRasterGeoreferencerLayerType, FreehandRasterGeoreferencerLayer
-from freehandrastergeoreferencer_maptools import MoveRasterMapTool,\
+from .freehandrastergeoreferencer_maptools import MoveRasterMapTool,\
     RotateRasterMapTool, ScaleRasterMapTool, AdjustRasterMapTool,\
     GeorefRasterBy2PointsMapTool
-from freehandrastergeoreferencerdialog import FreehandRasterGeoreferencerDialog
-import resources_rc  # noqa
-import utils
+from .freehandrastergeoreferencerdialog import \
+    FreehandRasterGeoreferencerDialog
+from . import resources_rc  # noqa
+from . import utils
 
 
 class FreehandRasterGeoreferencer(object):
 
-    PLUGIN_MENU = u"&Freehand Raster Georeferencer"
+    PLUGIN_MENU = "&Freehand Raster Georeferencer"
 
     def __init__(self, iface):
-        # Save reference to the QGIS interface
         self.iface = iface
-        # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         self.layers = {}
-        QObject.connect(QgsMapLayerRegistry.instance(), SIGNAL(
-            "layerRemoved(QString)"), self.layerRemoved)
-        # new pyqt4 connection style: old style (like above) does not work...
-        self.iface.legendInterface().currentLayerChanged.connect(
+        QgsProject.instance().layerRemoved.connect(self.layerRemoved)
+        self.iface.currentLayerChanged.connect(
             self.currentLayerChanged)
 
     def initGui(self):
         # Create actions
         self.actionAddLayer = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/iconAdd.png"),
-            u"Add raster for interactive georeferencing",
+            "Add raster for interactive georeferencing",
             self.iface.mainWindow())
         self.actionAddLayer.setObjectName(
             "FreehandRasterGeoreferencingLayerPlugin_AddLayer")
@@ -55,7 +52,7 @@ class FreehandRasterGeoreferencer(object):
 
         self.actionMoveRaster = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/iconMove.png"),
-            u"Move raster",
+            "Move raster",
             self.iface.mainWindow())
         self.actionMoveRaster.setObjectName(
             "FreehandRasterGeoreferencingLayerPlugin_MoveRaster")
@@ -64,7 +61,7 @@ class FreehandRasterGeoreferencer(object):
 
         self.actionRotateRaster = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/iconRotate.png"),
-            u"Rotate raster", self.iface.mainWindow())
+            "Rotate raster", self.iface.mainWindow())
         self.actionRotateRaster.setObjectName(
             "FreehandRasterGeoreferencingLayerPlugin_RotateRaster")
         self.actionRotateRaster.triggered.connect(self.rotateRaster)
@@ -72,7 +69,7 @@ class FreehandRasterGeoreferencer(object):
 
         self.actionScaleRaster = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/iconScale.png"),
-            u"Scale raster", self.iface.mainWindow())
+            "Scale raster", self.iface.mainWindow())
         self.actionScaleRaster.setObjectName(
             "FreehandRasterGeoreferencingLayerPlugin_ScaleRaster")
         self.actionScaleRaster.triggered.connect(self.scaleRaster)
@@ -80,7 +77,7 @@ class FreehandRasterGeoreferencer(object):
 
         self.actionAdjustRaster = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/iconAdjust.png"),
-            u"Adjust sides of raster", self.iface.mainWindow())
+            "Adjust sides of raster", self.iface.mainWindow())
         self.actionAdjustRaster.setObjectName(
             "FreehandRasterGeoreferencingLayerPlugin_AdjustRaster")
         self.actionAdjustRaster.triggered.connect(self.adjustRaster)
@@ -88,7 +85,7 @@ class FreehandRasterGeoreferencer(object):
 
         self.actionGeoref2PRaster = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/icon2Points.png"),
-            u"Georeference raster with 2 points", self.iface.mainWindow())
+            "Georeference raster with 2 points", self.iface.mainWindow())
         self.actionGeoref2PRaster.setObjectName(
             "FreehandRasterGeoreferencingLayerPlugin_Georef2PRaster")
         self.actionGeoref2PRaster.triggered.connect(self.georef2PRaster)
@@ -97,7 +94,7 @@ class FreehandRasterGeoreferencer(object):
         self.actionIncreaseTransparency = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/"
                   "iconTransparencyIncrease.png"),
-            u"Increase transparency", self.iface.mainWindow())
+            "Increase transparency", self.iface.mainWindow())
         self.actionIncreaseTransparency.triggered.connect(
             self.increaseTransparency)
         self.actionIncreaseTransparency.setShortcut("Alt+Ctrl+N")
@@ -105,14 +102,14 @@ class FreehandRasterGeoreferencer(object):
         self.actionDecreaseTransparency = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/"
                   "iconTransparencyDecrease.png"),
-            u"Decrease transparency", self.iface.mainWindow())
+            "Decrease transparency", self.iface.mainWindow())
         self.actionDecreaseTransparency.triggered.connect(
             self.decreaseTransparency)
         self.actionDecreaseTransparency.setShortcut("Alt+Ctrl+B")
 
         self.actionExport = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/iconExport.png"),
-            u"Export raster with world file", self.iface.mainWindow())
+            "Export raster with world file", self.iface.mainWindow())
         self.actionExport.triggered.connect(self.exportAsRaster)
 
         # Add toolbar button and menu item for AddLayer
@@ -135,7 +132,7 @@ class FreehandRasterGeoreferencer(object):
 
         # Register plugin layer type
         self.layerType = FreehandRasterGeoreferencerLayerType(self)
-        QgsPluginLayerRegistry.instance().addPluginLayerType(self.layerType)
+        QgsApplication.pluginLayerRegistry().addPluginLayerType(self.layerType)
 
         self.dialogAddLayer = FreehandRasterGeoreferencerDialog()
 
@@ -162,12 +159,11 @@ class FreehandRasterGeoreferencer(object):
             FreehandRasterGeoreferencer.PLUGIN_MENU, self.actionAddLayer)
 
         # Unregister plugin layer type
-        QgsPluginLayerRegistry.instance().removePluginLayerType(
+        QgsApplication.pluginLayerRegistry().removePluginLayerType(
             FreehandRasterGeoreferencerLayer.LAYER_TYPE)
 
-        QObject.disconnect(QgsMapLayerRegistry.instance(), SIGNAL(
-            "layerRemoved(QString)"), self.layerRemoved)
-        self.iface.legendInterface().currentLayerChanged.disconnect(
+        QgsProject.instance().layerRemoved.disconnect(self.layerRemoved)
+        self.iface.currentLayerChanged.disconnect(
             self.currentLayerChanged)
 
         del self.toolbar
@@ -181,7 +177,7 @@ class FreehandRasterGeoreferencer(object):
         self.checkCurrentLayerIsPluginLayer()
 
     def checkCurrentLayerIsPluginLayer(self):
-        layer = self.iface.legendInterface().currentLayer()
+        layer = self.iface.activeLayer()
         if (layer and
             layer.type() == QgsMapLayer.PluginLayer and
                 layer.pluginLayerType() ==
@@ -234,53 +230,53 @@ class FreehandRasterGeoreferencer(object):
         layer = FreehandRasterGeoreferencerLayer(
             self, imagePath, imageName, screenExtent)
         if layer.isValid():
-            QgsMapLayerRegistry.instance().addMapLayer(layer)
+            QgsProject.instance().addMapLayer(layer)
             self.layers[layer.id()] = layer
-            self.iface.legendInterface().setCurrentLayer(layer)
+            self.iface.setActiveLayer(layer)
 
     def moveRaster(self):
         self.currentTool = self.moveTool
-        layer = self.iface.legendInterface().currentLayer()
+        layer = self.iface.activeLayer()
         self.moveTool.setLayer(layer)
         self.iface.mapCanvas().setMapTool(self.moveTool)
 
     def rotateRaster(self):
         self.currentTool = self.rotateTool
-        layer = self.iface.legendInterface().currentLayer()
+        layer = self.iface.activeLayer()
         self.rotateTool.setLayer(layer)
         self.iface.mapCanvas().setMapTool(self.rotateTool)
 
     def scaleRaster(self):
         self.currentTool = self.scaleTool
-        layer = self.iface.legendInterface().currentLayer()
+        layer = self.iface.activeLayer()
         self.scaleTool.setLayer(layer)
         self.iface.mapCanvas().setMapTool(self.scaleTool)
 
     def adjustRaster(self):
         self.currentTool = self.adjustTool
-        layer = self.iface.legendInterface().currentLayer()
+        layer = self.iface.activeLayer()
         self.adjustTool.setLayer(layer)
         self.iface.mapCanvas().setMapTool(self.adjustTool)
 
     def georef2PRaster(self):
         self.currentTool = self.georef2PTool
-        layer = self.iface.legendInterface().currentLayer()
+        layer = self.iface.activeLayer()
         self.georef2PTool.setLayer(layer)
         self.iface.mapCanvas().setMapTool(self.georef2PTool)
 
     def increaseTransparency(self):
-        layer = self.iface.legendInterface().currentLayer()
+        layer = self.iface.activeLayer()
         # clamp to 100
         tr = min(layer.transparency + 10, 100)
         layer.transparencyChanged(tr)
 
     def decreaseTransparency(self):
-        layer = self.iface.legendInterface().currentLayer()
+        layer = self.iface.activeLayer()
         # clamp to 0
         tr = max(layer.transparency - 10, 0)
         layer.transparencyChanged(tr)
 
     def exportAsRaster(self):
-        layer = self.iface.legendInterface().currentLayer()
+        layer = self.iface.activeLayer()
         exportCommand = ExportAsRasterCommand(self.iface)
         exportCommand.exportAsRaster(layer)

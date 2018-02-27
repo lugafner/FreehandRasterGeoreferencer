@@ -11,27 +11,25 @@
 """
 
 import os.path
-import string
 
-from PyQt4 import QtGui
-from PyQt4.QtCore import qDebug, QObject, SIGNAL, Qt
-from PyQt4.QtGui import QApplication, QFileDialog, QMessageBox
+from PyQt5.QtCore import qDebug, Qt
+from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog, QMessageBox
 from qgis.core import QgsProject
 
-from ui_loaderrordialog import Ui_LoadError
-import utils
+from .ui_loaderrordialog import Ui_LoadError
+from . import utils
 
 
-class LoadErrorDialog(QtGui.QDialog, Ui_LoadError):
+class LoadErrorDialog(QDialog, Ui_LoadError):
 
     def __init__(self, filepath):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         self.setupUi(self)
 
-        self.lblError.setText(u"File '%s' not found." % filepath)
+        self.lblError.setText("File '%s' not found." % filepath)
         QApplication.setOverrideCursor(Qt.ArrowCursor)
-        QObject.connect(self.pushButtonBrowse, SIGNAL("clicked()"),
-                        self.showBrowserDialog)
+        self.pushButtonBrowse.clicked.connect(
+            self.showBrowserDialog)
 
     def clear(self):
         self.lineEditImagePath.setText("")
@@ -45,9 +43,9 @@ class LoadErrorDialog(QtGui.QDialog, Ui_LoadError):
         if not found or not os.path.isdir(bDir):
             bDir = os.path.expanduser("~")
 
-        qDebug(repr(bDir))
-        filepath = '%s' % (QFileDialog.getOpenFileName(
-            self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif)"))
+        qDebug(bDir.encode())
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif)")
         self.lineEditImagePath.setText(filepath)
 
         if filepath:
@@ -63,10 +61,10 @@ class LoadErrorDialog(QtGui.QDialog, Ui_LoadError):
     def accept(self):
         result, message, details = self.validate()
         if result:
-            self.done(QtGui.QDialog.Accepted)
+            self.done(QDialog.Accepted)
         else:
-            msgBox = QtGui.QMessageBox()
-            msgBox.setWindowTitle(u"Error")
+            msgBox = QMessageBox()
+            msgBox.setWindowTitle("Error")
             msgBox.setText(message)
             msgBox.setDetailedText(details)
             msgBox.setStandardButtons(QMessageBox.Ok)
@@ -79,13 +77,13 @@ class LoadErrorDialog(QtGui.QDialog, Ui_LoadError):
 
         self.imagePath = self.lineEditImagePath.text()
         _, extension = os.path.splitext(self.imagePath)
-        extension = string.lower(extension)
+        extension = extension.lower()
         if not os.path.isfile(self.imagePath) or \
                 (extension not in [".jpg", ".bmp", ".png", ".tif"]):
             result = False
             if len(details) > 0:
                 details += '\n'
-            details += u"The path must be an image file"
+            details += "The path must be an image file"
 
         if not result:
             message = "There were errors in the form"

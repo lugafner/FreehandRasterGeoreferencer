@@ -10,9 +10,9 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtGui import QDialog
+from PyQt5.QtWidgets import QDialog
 
-from ui_propertiesdialog import Ui_Dialog
+from .ui_propertiesdialog import Ui_Dialog
 
 
 class PropertiesDialog(QDialog, Ui_Dialog):
@@ -20,7 +20,7 @@ class PropertiesDialog(QDialog, Ui_Dialog):
         QDialog.__init__(self)
         # set up the user interface
         self.setupUi(self)
-        self.setWindowTitle(u"%s - %s" %
+        self.setWindowTitle("%s - %s" %
                             (self.tr("Layer Properties"), layer.name()))
 
         self.layer = layer

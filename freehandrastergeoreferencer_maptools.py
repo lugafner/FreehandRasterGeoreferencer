@@ -13,14 +13,24 @@
 import math
 from operator import itemgetter
 
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QApplication, QInputDialog, QMessageBox
-from qgis.core import QGis, QgsPoint, QgsGeometry
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QInputDialog, QMessageBox
+from qgis.core import QgsPointXY, QgsGeometry, QgsWkbTypes
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 
+from .rastershadowmapcanvasitem import RasterShadowMapCanvasItem
+from .utils import tryfloat
 
-from rastershadowmapcanvasitem import RasterShadowMapCanvasItem
-from utils import tryfloat
+
+def isLayerVisible(iface, layer):
+    # TODO Really ???? See if there is something simpler
+    vl = iface.layerTreeView().layerTreeModel().rootGroup().findLayer(layer)
+    return vl.itemVisibilityChecked()
+
+
+def setLayerVisible(iface, layer, visible):
+    vl = iface.layerTreeView().layerTreeModel().rootGroup().findLayer(layer)
+    vl.setItemVisibilityChecked(visible)
 
 
 class MoveRasterMapTool(QgsMapToolEmitPoint):
@@ -31,11 +41,13 @@ class MoveRasterMapTool(QgsMapToolEmitPoint):
 
         self.rasterShadow = RasterShadowMapCanvasItem(self.canvas)
 
-        self.rubberBandDisplacement = QgsRubberBand(self.canvas, QGis.Line)
+        self.rubberBandDisplacement = QgsRubberBand(
+            self.canvas, QgsWkbTypes.LineGeometry)
         self.rubberBandDisplacement.setColor(Qt.red)
         self.rubberBandDisplacement.setWidth(1)
 
-        self.rubberBandExtent = QgsRubberBand(self.canvas, QGis.Line)
+        self.rubberBandExtent = QgsRubberBand(
+            self.canvas, QgsWkbTypes.LineGeometry)
         self.rubberBandExtent.setColor(Qt.red)
         self.rubberBandExtent.setWidth(1)
 
@@ -49,8 +61,8 @@ class MoveRasterMapTool(QgsMapToolEmitPoint):
     def reset(self):
         self.startPoint = self.endPoint = None
         self.isEmittingPoint = False
-        self.rubberBandDisplacement.reset(QGis.Line)
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         self.rasterShadow.reset()
         self.layer = None
 
@@ -64,25 +76,24 @@ class MoveRasterMapTool(QgsMapToolEmitPoint):
         self.originalCornerPoints = self.layer.transformedCornerCoordinates(
             *self.layer.transformParameters())
 
-        self.isLayerVisible = self.iface.legendInterface().isLayerVisible(
-            self.layer)
-        self.iface.legendInterface().setLayerVisible(self.layer, False)
+        self.isLayerVisible = isLayerVisible(self.iface, self.layer)
+        setLayerVisible(self.iface, self.layer, False)
 
         self.showDisplacement(self.startPoint, self.endPoint)
 
     def canvasReleaseEvent(self, e):
         self.isEmittingPoint = False
 
-        self.rubberBandDisplacement.reset(QGis.Line)
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         self.rasterShadow.reset()
 
         x = self.originalCenter.x() + self.endPoint.x() - self.startPoint.x()
         y = self.originalCenter.y() + self.endPoint.y() - self.startPoint.y()
-        self.layer.setCenter(QgsPoint(x, y))
+        self.layer.setCenter(QgsPointXY(x, y))
 
-        self.iface.legendInterface().setLayerVisible(self.layer,
-                                                     self.isLayerVisible)
+        setLayerVisible(self.iface, self.layer,
+                        self.isLayerVisible)
         self.layer.repaint()
 
         self.layer.commitTransformParameters()
@@ -95,15 +106,15 @@ class MoveRasterMapTool(QgsMapToolEmitPoint):
         self.showDisplacement(self.startPoint, self.endPoint)
 
     def showDisplacement(self, startPoint, endPoint):
-        self.rubberBandDisplacement.reset(QGis.Line)
-        point1 = QgsPoint(startPoint.x(), startPoint.y())
-        point2 = QgsPoint(endPoint.x(), endPoint.y())
+        self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
+        point1 = QgsPointXY(startPoint.x(), startPoint.y())
+        point2 = QgsPointXY(endPoint.x(), endPoint.y())
         self.rubberBandDisplacement.addPoint(point1, False)
         self.rubberBandDisplacement.addPoint(
             point2, True)  # true to update canvas
         self.rubberBandDisplacement.show()
 
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         for point in self.originalCornerPoints:
             self._addDisplacementToPoint(self.rubberBandExtent, point, False)
         # for closing
@@ -119,7 +130,7 @@ class MoveRasterMapTool(QgsMapToolEmitPoint):
     def _addDisplacementToPoint(self, rubberBand, point, doUpdate):
         x = point.x() + self.endPoint.x() - self.startPoint.x()
         y = point.y() + self.endPoint.y() - self.startPoint.y()
-        self.rubberBandExtent.addPoint(QgsPoint(x, y), doUpdate)
+        self.rubberBandExtent.addPoint(QgsPointXY(x, y), doUpdate)
 
 # move the mouse in the Y axis to rotate
 
@@ -132,13 +143,15 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
 
         self.rasterShadow = RasterShadowMapCanvasItem(self.canvas)
 
-        self.rubberBandExtent = QgsRubberBand(self.canvas, QGis.Line)
+        self.rubberBandExtent = QgsRubberBand(
+            self.canvas, QgsWkbTypes.LineGeometry)
         self.rubberBandExtent.setColor(Qt.red)
         self.rubberBandExtent.setWidth(1)
 
         # In case of rotation around pressed point (ctrl)
         # Use rubberBand for displaying an horizontal line.
-        self.rubberBandDisplacement = QgsRubberBand(self.canvas, QGis.Line)
+        self.rubberBandDisplacement = QgsRubberBand(
+            self.canvas, QgsWkbTypes.LineGeometry)
         self.rubberBandDisplacement.setColor(Qt.red)
         self.rubberBandDisplacement.setWidth(1)
 
@@ -150,8 +163,8 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
     def reset(self):
         self.startPoint = self.endPoint = None
         self.isEmittingPoint = False
-        self.rubberBandExtent.reset(QGis.Line)
-        self.rubberBandDisplacement.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
+        self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
         self.rasterShadow.reset()
         self.layer = None
 
@@ -166,9 +179,8 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
         self.startPoint = self.toMapCoordinates(e.pos())
         self.endPoint = self.startPoint
 
-        self.isLayerVisible = self.iface.legendInterface().isLayerVisible(
-            self.layer)
-        self.iface.legendInterface().setLayerVisible(self.layer, False)
+        self.isLayerVisible = isLayerVisible(self.iface, self.layer)
+        setLayerVisible(self.iface, self.layer, False)
 
         rotation = self.computeRotation()
         self.showRotation(rotation)
@@ -176,8 +188,8 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
     def canvasReleaseEvent(self, e):
         self.isEmittingPoint = False
 
-        self.rubberBandExtent.reset(QGis.Line)
-        self.rubberBandDisplacement.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
+        self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
         self.rasterShadow.reset()
 
         rotation = self.computeRotation()
@@ -186,8 +198,8 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
                 self.startPoint, rotation, 1, 1)
         self.layer.setRotation(self.layer.rotation + rotation)
 
-        self.iface.legendInterface().setLayerVisible(self.layer,
-                                                     self.isLayerVisible)
+        setLayerVisible(self.iface, self.layer,
+                        self.isLayerVisible)
         self.layer.repaint()
 
         self.layer.commitTransformParameters()
@@ -221,10 +233,10 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
                 rotation, self.startPoint, True)
             self.rasterShadow.show()
 
-            self.rubberBandDisplacement.reset(QGis.Line)
-            point0 = QgsPoint(self.startPoint.x() + 10, self.startPoint.y())
-            point1 = QgsPoint(self.startPoint.x(), self.startPoint.y())
-            point2 = QgsPoint(self.endPoint.x(), self.endPoint.y())
+            self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
+            point0 = QgsPointXY(self.startPoint.x() + 10, self.startPoint.y())
+            point1 = QgsPointXY(self.startPoint.x(), self.startPoint.y())
+            point2 = QgsPointXY(self.endPoint.x(), self.endPoint.y())
             self.rubberBandDisplacement.addPoint(point0, False)
             self.rubberBandDisplacement.addPoint(point1, False)
             self.rubberBandDisplacement.addPoint(
@@ -241,7 +253,7 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
             self.rasterShadow.setDeltaRotation(rotation, True)
             self.rasterShadow.show()
 
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         for point in cornerPoints:
             self.rubberBandExtent.addPoint(point, False)
         # for closing
@@ -259,7 +271,8 @@ class ScaleRasterMapTool(QgsMapToolEmitPoint):
 
         self.rasterShadow = RasterShadowMapCanvasItem(self.canvas)
 
-        self.rubberBandExtent = QgsRubberBand(self.canvas, QGis.Line)
+        self.rubberBandExtent = QgsRubberBand(
+            self.canvas, QgsWkbTypes.LineGeometry)
         self.rubberBandExtent.setColor(Qt.red)
         self.rubberBandExtent.setWidth(1)
 
@@ -271,7 +284,7 @@ class ScaleRasterMapTool(QgsMapToolEmitPoint):
     def reset(self):
         self.startPoint = self.endPoint = None
         self.isEmittingPoint = False
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         self.rasterShadow.reset()
         self.layer = None
 
@@ -287,9 +300,9 @@ class ScaleRasterMapTool(QgsMapToolEmitPoint):
             modifiers = QApplication.keyboardModifiers()
             self.isKeepRelativeScale = bool(modifiers & Qt.ControlModifier)
 
-            self.isLayerVisible = self.iface.legendInterface().isLayerVisible(
-                self.layer)
-            self.iface.legendInterface().setLayerVisible(self.layer, False)
+            self.isLayerVisible = isLayerVisible(self.iface,
+                                                 self.layer)
+            setLayerVisible(self.iface, self.layer, False)
 
             scaling = self.computeScaling()
             self.showScaling(*scaling)
@@ -299,26 +312,25 @@ class ScaleRasterMapTool(QgsMapToolEmitPoint):
         if pressed_button == 1:
             self.isEmittingPoint = False
 
-            self.rubberBandExtent.reset(QGis.Line)
+            self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
             self.rasterShadow.reset()
 
             xScale, yScale = self.computeScaling()
             self.layer.setScale(xScale * self.layer.xScale,
                                 yScale * self.layer.yScale)
 
-            self.iface.legendInterface().setLayerVisible(self.layer,
-                                                         self.isLayerVisible)
+            setLayerVisible(self.iface, self.layer, self.isLayerVisible)
         elif pressed_button == 2:
             number, ok = QInputDialog.getText(
-                None, u'Scale & DPI', u'Enter scale,dpi (e.g. 3000,96)')
+                None, "Scale & DPI", "Enter scale,dpi (e.g. 3000,96)")
             if not ok:
                 return
             scales = number.split(',')
             if len(scales) != 2:
                 QMessageBox.information(
                     self.iface.mainWindow(),
-                    u'Error',
-                    u'Must be 2 numbers')
+                    "Error",
+                    "Must be 2 numbers")
                 return
             scale = tryfloat(scales[0])
             dpi = tryfloat(scales[1])
@@ -328,8 +340,8 @@ class ScaleRasterMapTool(QgsMapToolEmitPoint):
             else:
                 QMessageBox.information(
                     self.iface.mainWindow(),
-                    u'Error',
-                    u'Bad format: Must be scale,dpi (e.g. 3000,96)')
+                    "Error",
+                    "Bad format: Must be scale,dpi (e.g. 3000,96)")
                 return
 
             self.layer.setScale(xScale, yScale)
@@ -368,7 +380,7 @@ class ScaleRasterMapTool(QgsMapToolEmitPoint):
         cornerPoints = self.layer.transformedCornerCoordinates(
             center, rotation, newXScale, newYScale)
 
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         for point in cornerPoints:
             self.rubberBandExtent.addPoint(point, False)
         # for closing
@@ -388,11 +400,13 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
 
         self.rasterShadow = RasterShadowMapCanvasItem(self.canvas)
 
-        self.rubberBandExtent = QgsRubberBand(self.canvas, QGis.Line)
+        self.rubberBandExtent = QgsRubberBand(
+            self.canvas, QgsWkbTypes.LineGeometry)
         self.rubberBandExtent.setColor(Qt.red)
         self.rubberBandExtent.setWidth(1)
 
-        self.rubberBandAdjustSide = QgsRubberBand(self.canvas, QGis.Line)
+        self.rubberBandAdjustSide = QgsRubberBand(
+            self.canvas, QgsWkbTypes.LineGeometry)
         self.rubberBandAdjustSide.setColor(Qt.red)
         self.rubberBandAdjustSide.setWidth(3)
 
@@ -404,8 +418,8 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
     def reset(self):
         self.startPoint = self.endPoint = None
         self.isEmittingPoint = False
-        self.rubberBandExtent.reset(QGis.Line)
-        self.rubberBandAdjustSide.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
+        self.rubberBandAdjustSide.reset(QgsWkbTypes.LineGeometry)
         self.rasterShadow.reset()
         self.layer = None
 
@@ -419,12 +433,12 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
         bottom = [bottomRight, bottomLeft]
         left = [bottomLeft, topLeft]
 
-        click = QgsGeometry.fromPoint(self.toMapCoordinates(e.pos()))
+        click = QgsGeometry.fromPointXY(self.toMapCoordinates(e.pos()))
 
         # order is important (for referenceSide)
         sides = [top, right, bottom, left]
         distances = [click.distance(
-            QgsGeometry.fromPolyline(side)) for side in sides]
+            QgsGeometry.fromPolylineXY(side)) for side in sides]
         self.indexSide = self.minDistance(distances)
         self.side = sides[self.indexSide]
         self.sidePoint = self.center(self.side)
@@ -440,9 +454,9 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
         self.endPoint = self.startPoint
         self.isEmittingPoint = True
 
-        self.isLayerVisible = self.iface.legendInterface().isLayerVisible(
-            self.layer)
-        self.iface.legendInterface().setLayerVisible(self.layer, False)
+        self.isLayerVisible = isLayerVisible(self.iface,
+                                             self.layer)
+        setLayerVisible(self.iface, self.layer, False)
 
         adjustment = self.computeAdjustment()
         self.showAdjustment(*adjustment)
@@ -463,8 +477,8 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
         return normedVector
 
     def center(self, side):
-        return QgsPoint((side[0].x() + side[1].x()) / 2,
-                        (side[0].y() + side[1].y()) / 2)
+        return QgsPointXY((side[0].x() + side[1].x()) / 2,
+                          (side[0].y() + side[1].y()) / 2)
 
     def distance(self, pt1, pt2):
         return math.sqrt((pt1.x() - pt2.x())**2 + (pt1.y() - pt2.y())**2)
@@ -472,8 +486,8 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
     def canvasReleaseEvent(self, e):
         self.isEmittingPoint = False
 
-        self.rubberBandExtent.reset(QGis.Line)
-        self.rubberBandAdjustSide.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
+        self.rubberBandAdjustSide.reset(QgsWkbTypes.LineGeometry)
         self.rasterShadow.reset()
 
         center, xScale, yScale = self.computeAdjustment()
@@ -481,8 +495,8 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
         self.layer.setScale(xScale * self.layer.xScale,
                             yScale * self.layer.yScale)
 
-        self.iface.legendInterface().setLayerVisible(self.layer,
-                                                     self.isLayerVisible)
+        setLayerVisible(self.iface, self.layer,
+                        self.isLayerVisible)
         self.layer.repaint()
 
         self.layer.commitTransformParameters()
@@ -506,8 +520,8 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
         if dp < -0.95 * self.referenceDistance:
             dp = -0.95 * self.referenceDistance
 
-        updatedSidePoint = QgsPoint(self.sidePoint.x() + dp * self.vector[0],
-                                    self.sidePoint.y() + dp * self.vector[1])
+        updatedSidePoint = QgsPointXY(self.sidePoint.x() + dp * self.vector[0],
+                                      self.sidePoint.y() + dp * self.vector[1])
 
         center = self.center([self.referencePoint, updatedSidePoint])
         scaleFactor = self.distance(self.referencePoint, updatedSidePoint)
@@ -528,7 +542,7 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
         cornerPoints = self.layer.transformedCornerCoordinates(
             center, rotation, newXScale, newYScale)
 
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         for point in cornerPoints:
             self.rubberBandExtent.addPoint(point, False)
         # for closing
@@ -538,7 +552,7 @@ class AdjustRasterMapTool(QgsMapToolEmitPoint):
         # show rubberband for side
         # see def of indexSide in init:
         # cornerpoints are (topLeft, topRight, bottomRight, bottomLeft)
-        self.rubberBandAdjustSide.reset(QGis.Line)
+        self.rubberBandAdjustSide.reset(QgsWkbTypes.LineGeometry)
         self.rubberBandAdjustSide.addPoint(
             cornerPoints[self.indexSide % 4], False)
         self.rubberBandAdjustSide.addPoint(
@@ -563,17 +577,20 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
 
         self.firstPoint = None
 
-        self.rubberBandOrigin = QgsRubberBand(self.canvas, QGis.Point)
+        self.rubberBandOrigin = QgsRubberBand(
+            self.canvas, QgsWkbTypes.PointGeometry)
         self.rubberBandOrigin.setColor(Qt.red)
         self.rubberBandOrigin.setIcon(QgsRubberBand.ICON_CIRCLE)
         self.rubberBandOrigin.setIconSize(7)
         self.rubberBandOrigin.setWidth(2)
 
-        self.rubberBandDisplacement = QgsRubberBand(self.canvas, QGis.Line)
+        self.rubberBandDisplacement = QgsRubberBand(
+            self.canvas, QgsWkbTypes.LineGeometry)
         self.rubberBandDisplacement.setColor(Qt.red)
         self.rubberBandDisplacement.setWidth(1)
 
-        self.rubberBandExtent = QgsRubberBand(self.canvas, QGis.Line)
+        self.rubberBandExtent = QgsRubberBand(
+            self.canvas, QgsWkbTypes.LineGeometry)
         self.rubberBandExtent.setColor(Qt.red)
         self.rubberBandExtent.setWidth(2)
 
@@ -587,9 +604,9 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
     def reset(self):
         self.startPoint = self.endPoint = self.firstPoint = None
         self.isEmittingPoint = False
-        self.rubberBandOrigin.reset(QGis.Point)
-        self.rubberBandDisplacement.reset(QGis.Line)
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandOrigin.reset(QgsWkbTypes.PointGeometry)
+        self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         self.rasterShadow.reset()
         self.layer = None
 
@@ -609,9 +626,9 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
                 self.layer.transformedCornerCoordinates(
                     *self.layer.transformParameters())
 
-            self.isLayerVisible = self.iface.legendInterface().isLayerVisible(
-                self.layer)
-            self.iface.legendInterface().setLayerVisible(self.layer, False)
+            self.isLayerVisible = isLayerVisible(self.iface,
+                                                 self.layer)
+            setLayerVisible(self.iface, self.layer, False)
 
             self.showDisplacement(self.startPoint, self.endPoint)
         else:
@@ -623,9 +640,9 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
             self.isEmittingPoint = True
             self.height = self.canvas.height()
 
-            self.isLayerVisible = self.iface.legendInterface().isLayerVisible(
-                self.layer)
-            self.iface.legendInterface().setLayerVisible(self.layer, False)
+            self.isLayerVisible = isLayerVisible(self.iface,
+                                                 self.layer)
+            setLayerVisible(self.iface, self.layer, False)
 
             rotation = self.computeRotation()
             xScale = yScale = self.computeScale()
@@ -634,8 +651,8 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
     def canvasReleaseEvent(self, e):
         self.isEmittingPoint = False
 
-        self.rubberBandDisplacement.reset(QGis.Line)
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         self.rasterShadow.reset()
 
         if self.firstPoint is None:
@@ -643,11 +660,11 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
                  self.startPoint.x())
             y = (self.originalCenter.y() + self.endPoint.y() -
                  self.startPoint.y())
-            self.layer.setCenter(QgsPoint(x, y))
+            self.layer.setCenter(QgsPointXY(x, y))
             self.firstPoint = self.endPoint
 
-            self.iface.legendInterface().setLayerVisible(self.layer,
-                                                         self.isLayerVisible)
+            setLayerVisible(self.iface, self.layer,
+                            self.isLayerVisible)
             self.layer.repaint()
 
             self.layer.commitTransformParameters()
@@ -660,15 +677,15 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
             self.layer.setScale(self.layer.xScale * xScale,
                                 self.layer.yScale * yScale)
 
-            self.iface.legendInterface().setLayerVisible(self.layer,
-                                                         self.isLayerVisible)
+            setLayerVisible(self.iface, self.layer,
+                            self.isLayerVisible)
             self.layer.repaint()
 
             self.layer.commitTransformParameters()
 
-            self.rubberBandDisplacement.reset(QGis.Line)
-            self.rubberBandExtent.reset(QGis.Line)
-            self.rubberBandOrigin.reset(QGis.Point)
+            self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
+            self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
+            self.rubberBandOrigin.reset(QgsWkbTypes.PointGeometry)
             self.rasterShadow.reset()
 
             self.firstPoint = None
@@ -712,7 +729,7 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
         cornerPoints = self.layer.transformedCornerCoordinatesFromPoint(
             self.firstPoint, rotation, xScale, yScale)
 
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         for point in cornerPoints:
             self.rubberBandExtent.addPoint(point, False)
         self.rubberBandExtent.addPoint(cornerPoints[0], True)
@@ -730,10 +747,10 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
         self.rasterShadow.setDeltaRotation(rotation, True)
         self.rasterShadow.show()
 
-        self.rubberBandDisplacement.reset(QGis.Line)
-        point0 = QgsPoint(self.startPoint.x(), self.startPoint.y())
-        point1 = QgsPoint(self.firstPoint.x(), self.firstPoint.y())
-        point2 = QgsPoint(self.endPoint.x(), self.endPoint.y())
+        self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
+        point0 = QgsPointXY(self.startPoint.x(), self.startPoint.y())
+        point1 = QgsPointXY(self.firstPoint.x(), self.firstPoint.y())
+        point2 = QgsPointXY(self.endPoint.x(), self.endPoint.y())
         self.rubberBandDisplacement.addPoint(point0, False)
         self.rubberBandDisplacement.addPoint(point1, False)
         self.rubberBandDisplacement.addPoint(
@@ -741,19 +758,19 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
         self.rubberBandDisplacement.show()
 
     def showDisplacement(self, startPoint, endPoint):
-        self.rubberBandOrigin.reset(QGis.Point)
+        self.rubberBandOrigin.reset(QgsWkbTypes.PointGeometry)
         self.rubberBandOrigin.addPoint(endPoint, True)
         self.rubberBandOrigin.show()
 
-        self.rubberBandDisplacement.reset(QGis.Line)
-        point1 = QgsPoint(startPoint.x(), startPoint.y())
-        point2 = QgsPoint(endPoint.x(), endPoint.y())
+        self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
+        point1 = QgsPointXY(startPoint.x(), startPoint.y())
+        point2 = QgsPointXY(endPoint.x(), endPoint.y())
         self.rubberBandDisplacement.addPoint(point1, False)
         self.rubberBandDisplacement.addPoint(
             point2, True)  # true to update canvas
         self.rubberBandDisplacement.show()
 
-        self.rubberBandExtent.reset(QGis.Line)
+        self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
         for point in self.originalCornerPoints:
             self._addDisplacementToPoint(self.rubberBandExtent, point, False)
         # for closing
@@ -769,4 +786,4 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
     def _addDisplacementToPoint(self, rubberBand, point, doUpdate):
         x = point.x() + self.endPoint.x() - self.startPoint.x()
         y = point.y() + self.endPoint.y() - self.startPoint.y()
-        self.rubberBandExtent.addPoint(QgsPoint(x, y), doUpdate)
+        self.rubberBandExtent.addPoint(QgsPointXY(x, y), doUpdate)

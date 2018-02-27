@@ -10,8 +10,8 @@
  ***************************************************************************/
 """
 
-from PyQt4.QtCore import QRect, QPoint
-from qgis.core import QgsRectangle, QgsPoint
+from PyQt5.QtCore import QRect, QPoint
+from qgis.core import QgsRectangle, QgsPointXY
 from qgis.gui import QgsMapCanvasItem
 
 
@@ -85,8 +85,8 @@ class RasterShadowMapCanvasItem(QgsMapCanvasItem):
         self.setRect(QgsRectangle(left, bottom, right, top))
 
     def cornerCoordinates(self):
-        center = QgsPoint(self.layer.center.x() + self.dx,
-                          self.layer.center.y() + self.dy)
+        center = QgsPointXY(self.layer.center.x() + self.dx,
+                            self.layer.center.y() + self.dy)
         return self.layer.transformedCornerCoordinates(center,
                                                        self.layer.rotation,
                                                        self.layer.xScale,

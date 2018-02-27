@@ -12,7 +12,7 @@
 
 import os.path
 
-from PyQt4.QtCore import qDebug
+from PyQt5.QtCore import qDebug
 from qgis.core import QgsProject
 
 
@@ -34,7 +34,7 @@ def toRelativeToQGS(imagePath):
             # relative
             imageFolderRelPath = os.path.relpath(imageFolder, qgsFolder)
             imagePath = os.path.join(imageFolderRelPath, imageName)
-            qDebug(imagePath.encode('utf8'))
+            qDebug(imagePath.encode())
 
     return imagePath
 

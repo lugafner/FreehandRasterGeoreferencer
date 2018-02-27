@@ -21,5 +21,5 @@
 
 
 def classFactory(iface):
-    from freehandrastergeoreferencer import FreehandRasterGeoreferencer
+    from .freehandrastergeoreferencer import FreehandRasterGeoreferencer
     return FreehandRasterGeoreferencer(iface)
