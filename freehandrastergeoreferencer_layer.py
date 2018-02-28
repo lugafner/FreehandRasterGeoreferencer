@@ -393,7 +393,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
     def prepareStyle(self, painter):
         painter.setOpacity(1.0 - self.transparency / 100.0)
 
-    def readXml(self, node):
+    def readXml(self, node, context):
         self.readCustomProperties(node)
         self.title = self.customProperty("title", "")
         self.filepath = self.customProperty("filepath", "")
@@ -409,7 +409,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
             "blendMode", LayerDefaultSettings.BLEND_MODE))
         return True
 
-    def writeXml(self, node, doc):
+    def writeXml(self, node, doc, context):
         element = node.toElement()
         element.setAttribute("type", "plugin")
         element.setAttribute(
