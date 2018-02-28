@@ -99,7 +99,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         """
         oldCrs = self.crs()
         newCrs = self.iface.mapCanvas().mapSettings().destinationCrs()
-        transform = QgsCoordinateTransform(oldCrs, newCrs)
+        transform = QgsCoordinateTransform(oldCrs, newCrs,
+                                           QgsProject.instance())
 
         newCenter = transform.transform(self.center)
         newExtent = transform.transform(self.extent())
