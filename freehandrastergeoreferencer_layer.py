@@ -213,10 +213,12 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         # assume georef only has translation and scaling
         # since rotation not supported by QGIS or ArcGIS
         self.setRotation(0.0)
-        center = QgsPointXY(georef[0], georef[3])
+        sx, sy = georef[1], georef[5]
+        center = QgsPointXY(georef[0] + sx * self.image.width() / 2,
+                            georef[3] + sy * self.image.height() / 2)
         self.setCenter(center)
         # keep yScale positive
-        self.setScale(georef[1], -georef[5])
+        self.setScale(sx, -sy)
         self.commitTransformParameters()
 
         crs_wkt = dataset.GetProjection()
