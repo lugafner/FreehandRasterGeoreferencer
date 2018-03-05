@@ -13,11 +13,13 @@
 import math
 import os
 
+from osgeo import gdal
 from PyQt5.QtCore import qDebug, QRectF, QPointF, QPoint, Qt
 from PyQt5.QtGui import QImageReader, QPainter, QColor
-from qgis.core import QgsPluginLayer, QgsPointXY, QgsProject, \
-    QgsCoordinateTransform, QgsRectangle, \
-    QgsPluginLayerType, QgsDataProvider, QgsMapLayerRenderer
+from qgis.core import (QgsPluginLayer, QgsPointXY, QgsProject, Qgis,
+                       QgsCoordinateTransform, QgsRectangle,
+                       QgsCoordinateReferenceSystem, QgsPluginLayerType,
+                       QgsDataProvider, QgsMapLayerRenderer)
 
 from .loaderrordialog import LoadErrorDialog
 from . import utils
@@ -92,13 +94,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.setCustomProperty("xCenter", self.center.x())
         self.setCustomProperty("yCenter", self.center.y())
 
-    def resetTransformParametersToNewCrs(self):
-        """
-        Attempts to keep the layer on the same region of the mpa when
-        the map CRS is changed
-        """
-        oldCrs = self.crs()
-        newCrs = self.iface.mapCanvas().mapSettings().destinationCrs()
+    def reprojectTransformParameters(self, oldCrs, newCrs):
         transform = QgsCoordinateTransform(oldCrs, newCrs,
                                            QgsProject.instance())
 
@@ -112,9 +108,18 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.setCrs(newCrs)
         self.setCenter(newCenter)
         self.resetScale(newExtent.width(), newExtent.height())
+
+    def resetTransformParametersToNewCrs(self):
+        """
+        Attempts to keep the layer on the same region of the map when
+        the map CRS is changed
+        """
+        oldCrs = self.crs()
+        newCrs = self.iface.mapCanvas().mapSettings().destinationCrs()
+        self.reprojectTransformParameters(oldCrs, newCrs)
         self.commitTransformParameters()
 
-    def setupEvents(self):
+    def setupCrsEvents(self):
         layerId = self.id()
 
         def removeCrsChangeHandler(layerIds):
@@ -139,7 +144,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         mapCrs = self.iface.mapCanvas().mapSettings().destinationCrs()
         self.setCrs(mapCrs)
 
-        self.setupEvents()
+        self.setupCrsEvents()
 
     def repaint(self):
         self.repaintRequested.emit()
@@ -161,7 +166,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                 loadErrorDialog = LoadErrorDialog(filepath)
                 result = loadErrorDialog.exec_()
                 if result == 1:
-                    # aboslute
+                    # absolute
                     filepath = loadErrorDialog.lineEditImagePath.text()
                     # to relative if needed
                     self.filepath = utils.toRelativeToQGS(filepath)
@@ -177,20 +182,88 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
             self.initialized = True
             self.initializing = False
 
+            self.setupCrs()
+
             if screenExtent:
                 # constructor called from AddLayer action
                 # if not, layer loaded from QGS project file
-                self.setCenter(screenExtent.center())
-                self.setRotation(0.0)
 
-                sw = screenExtent.width()
-                sh = screenExtent.height()
+                # check if image already has georef info
+                # use GDAL
+                dataset = gdal.Open(filepath, gdal.GA_ReadOnly)
+                georef = None
+                if dataset:
+                    georef = dataset.GetGeoTransform()
 
-                self.resetScale(sw, sh)
+                if georef and not self.is_default_geotransform(georef):
+                    self.initializeExistingGeoreferencing(dataset, georef)
+                else:
+                    # init to default params
+                    self.setCenter(screenExtent.center())
+                    self.setRotation(0.0)
 
-                self.commitTransformParameters()
+                    sw = screenExtent.width()
+                    sh = screenExtent.height()
 
-            self.setupCrs()
+                    self.resetScale(sw, sh)
+
+                    self.commitTransformParameters()
+
+    def initializeExistingGeoreferencing(self, dataset, georef):
+        # assume georef only has translation and scaling
+        # since rotation not supported by QGIS or ArcGIS
+        self.setRotation(0.0)
+        center = QgsPointXY(georef[0], georef[3])
+        self.setCenter(center)
+        # keep yScale positive
+        self.setScale(georef[1], -georef[5])
+        self.commitTransformParameters()
+
+        crs_wkt = dataset.GetProjection()
+        message_shown = False
+        if crs_wkt:
+            qcrs = QgsCoordinateReferenceSystem(crs_wkt)
+            if qcrs != self.crs():
+                # reproject
+                try:
+                    self.reprojectTransformParameters(qcrs, self.crs())
+                    self.commitTransformParameters()
+                    self.showBarMessage(
+                        "Transform parameters changed",
+                        "Found existing georeferencing in raster but "
+                        "its CRS does not match the CRS of the map. "
+                        "Reprojected the extent.",
+                        Qgis.Warning,
+                        5)
+                    message_shown = True
+                except Exception:
+                    self.showBarMessage(
+                        "CRS does not match",
+                        "Found existing georeferencing in raster but "
+                        "its CRS does not match the CRS of the map. "
+                        "Unable to reproject.",
+                        Qgis.Warning,
+                        5)
+                    message_shown = True
+        # if no projection info, assume it is the same CRS
+        # as the map and no warning
+        if not message_shown:
+            self.showBarMessage(
+                "Georeferencing loaded",
+                "Found existing georeferencing in raster",
+                Qgis.Info,
+                3)
+
+        # zoom (assume the user wants to work on the image)
+        self.iface.mapCanvas().setExtent(self.extent())
+
+    def is_default_geotransform(self, georef):
+        """
+        Check if there is really a transform or if it is just the default
+        made up by GDAL
+        """
+        return (georef[0] == 0 and georef[3] == 0 and georef[1] == 1 and
+                georef[5] == 1)
 
     def resetScale(self, sw, sh):
         iw = self.image.width()
@@ -501,7 +574,4 @@ class FreehandRasterGeoreferencerLayerRenderer(QgsMapLayerRenderer):
 
     def render(self):
         # same implementation as for QGIS2
-        # FIXME not thread safe
-        # cf
-        # https://qgis.org/api/2.18/classQgsPluginLayer.html#ab509153e65a87e9ff8099b3ae22a72af
         return self.layer.draw(self.rendererContext)
