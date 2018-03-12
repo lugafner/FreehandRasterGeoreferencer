@@ -574,7 +574,7 @@ class FreehandRasterGeoreferencerLayerProvider(QgsDataProvider):
 
 class FreehandRasterGeoreferencerLayerRenderer(QgsMapLayerRenderer):
     """
-    Custom renderer: in QGIS3 no implementation is provided for 
+    Custom renderer: in QGIS3 no implementation is provided for
     QgsPluginLayers
     """
 

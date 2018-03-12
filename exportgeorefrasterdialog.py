@@ -12,12 +12,9 @@
 
 import os.path
 
-from PyQt5.QtCore import qDebug
 from PyQt5.QtWidgets import QDialog, QFileDialog, QMessageBox
-from qgis.core import QgsProject
 
 from .ui_exportgeorefrasterdialog import Ui_ExportGeorefRasterDialog
-from . import utils
 
 
 class ExportGeorefRasterDialog(QDialog,

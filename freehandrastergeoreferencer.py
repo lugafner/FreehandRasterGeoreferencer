@@ -19,11 +19,12 @@ from qgis.core import QgsApplication, QgsMapLayer, QgsProject
 from .freehandrastergeoreferencer_commands import ExportGeorefRasterCommand
 from .freehandrastergeoreferencer_layer import (
     FreehandRasterGeoreferencerLayerType, FreehandRasterGeoreferencerLayer)
-from .freehandrastergeoreferencer_maptools import (MoveRasterMapTool,
-                                                   RotateRasterMapTool,
-                                                   ScaleRasterMapTool,
-                                                   AdjustRasterMapTool,
-                                                   GeorefRasterBy2PointsMapTool)
+from .freehandrastergeoreferencer_maptools import \
+    (MoveRasterMapTool,
+     RotateRasterMapTool,
+     ScaleRasterMapTool,
+     AdjustRasterMapTool,
+     GeorefRasterBy2PointsMapTool)
 from .freehandrastergeoreferencerdialog import (
     FreehandRasterGeoreferencerDialog)
 from .exportgeorefrasterdialog import (

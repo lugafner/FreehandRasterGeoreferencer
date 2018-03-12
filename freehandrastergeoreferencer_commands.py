@@ -11,11 +11,9 @@
 """
 
 import math
-import os.path
 
 from PyQt5.QtCore import qDebug, QRectF, QPointF, QSize
 from PyQt5.QtGui import QImage, QPainter, QColor
-from PyQt5.QtWidgets import QFileDialog
 from qgis.core import QgsMessageLog, Qgis
 from qgis.gui import QgsMessageBar
 
@@ -62,10 +60,10 @@ class ExportGeorefRasterCommand(object):
                     scaleX = 1
                     scaleY = 1. / ratio
 
-                width = abs(scaleX * originalWidth * math.cos(radRotation)) + \
-                    abs(scaleY * originalHeight * math.sin(radRotation))
-                height = abs(scaleX * originalWidth * math.sin(radRotation)) + \
-                    abs(scaleY * originalHeight * math.cos(radRotation))
+                width = (abs(scaleX * originalWidth * math.cos(radRotation)) +
+                         abs(scaleY * originalHeight * math.sin(radRotation)))
+                height = (abs(scaleX * originalWidth * math.sin(radRotation)) +
+                          abs(scaleY * originalHeight * math.cos(radRotation)))
 
                 qDebug("wh %f,%f" % (width, height))
 
@@ -91,8 +89,8 @@ class ExportGeorefRasterCommand(object):
                 extent = layer.extent()
                 a = extent.width() / width
                 e = -extent.height() / height
-                # 2nd term because (0,0) of world file is on center of upper left
-                # pixel instead of upper left corner of that pixel
+                # 2nd term because (0,0) of world file is on center of upper
+                # left pixel instead of upper left corner of that pixel
                 c = extent.xMinimum() + a / 2
                 f = extent.yMaximum() + e / 2
                 b = d = 0.0
