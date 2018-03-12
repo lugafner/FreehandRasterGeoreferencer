@@ -16,12 +16,12 @@ from PyQt5.QtCore import qDebug
 from PyQt5.QtWidgets import QDialog, QFileDialog, QMessageBox
 from qgis.core import QgsProject
 
-from .ui_freehandrastergeoreferencer import Ui_FreehandRasterGeoreferencer
+from .ui_exportgeorefrasterdialog import Ui_ExportGeorefRasterDialog
 from . import utils
 
 
-class FreehandRasterGeoreferencerDialog(QDialog,
-                                        Ui_FreehandRasterGeoreferencer):
+class ExportGeorefRasterDialog(QDialog,
+                               Ui_ExportGeorefRasterDialog):
 
     def __init__(self):
         QDialog.__init__(self)
@@ -29,24 +29,25 @@ class FreehandRasterGeoreferencerDialog(QDialog,
 
         self.pushButtonBrowse.clicked.connect(self.showBrowserDialog)
 
-    def clear(self):
+    def clear(self, layer):
         self.lineEditImagePath.setText("")
+        self.checkBoxRotationMode.setChecked(False)
+
+        defaultPath, _ = os.path.splitext(layer.filepath)
+        self.defaultPath = defaultPath + "_georeferenced.png"
 
     def showBrowserDialog(self):
-        bDir, found = QgsProject.instance().readEntry(
-            utils.SETTINGS_KEY, utils.SETTING_BROWSER_RASTER_DIR, None)
-        if not found:
-            bDir = os.path.expanduser("~")
+        if self.lineEditImagePath.text():
+            filepathDialog = self.lineEditImagePath.text()
+        else:
+            filepathDialog = self.defaultPath
 
-        filepath, _ = QFileDialog.getOpenFileName(
-            self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif)")
+        filepath, _ = QFileDialog.getSaveFileName(
+            None, "Export georeferenced raster", filepathDialog,
+            "Images (*.png *.bmp *.jpg *.tif)")
 
         if filepath:
             self.lineEditImagePath.setText(filepath)
-            bDir, _ = os.path.split(filepath)
-            QgsProject.instance().writeEntry(utils.SETTINGS_KEY,
-                                             utils.SETTING_BROWSER_RASTER_DIR,
-                                             bDir)
 
     def accept(self):
         result, message, details = self.validate()
@@ -65,15 +66,21 @@ class FreehandRasterGeoreferencerDialog(QDialog,
         message = ""
         details = ""
 
+        self.isPutRotationInWorldFile = self.checkBoxRotationMode.isChecked()
+
         self.imagePath = self.lineEditImagePath.text()
-        _, extension = os.path.splitext(self.imagePath)
-        extension = extension.lower()
-        if not os.path.isfile(self.imagePath) or \
-                (extension not in [".jpg", ".bmp", ".png", ".tif"]):
+        if not self.imagePath:
             result = False
-            if len(details) > 0:
-                details += "\n"
-            details += "The path must be an image file"
+            details += "A file must be selected"
+
+        if result:
+            _, extension = os.path.splitext(self.imagePath)
+            extension = extension.lower()
+            if extension not in [".jpg", ".bmp", ".png", ".tif"]:
+                result = False
+                if len(details) > 0:
+                    details += "\n"
+                details += "The file must be an image"
 
         if not result:
             message = "There were errors in the form"

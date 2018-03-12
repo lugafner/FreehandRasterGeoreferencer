@@ -20,82 +20,88 @@ from qgis.core import QgsMessageLog, Qgis
 from qgis.gui import QgsMessageBar
 
 
-class ExportAsRasterCommand(object):
+class ExportGeorefRasterCommand(object):
 
     def __init__(self, iface):
         self.iface = iface
 
-    def exportAsRaster(self, layer):
-        rasterPath = self.getRasterPath(layer.filepath)
-        if not rasterPath:
-            # cancelled
-            return
-
+    def exportGeorefRaster(self, layer, rasterPath, isPutRotationInWorldFile):
         rasterFormat = rasterPath[-3:]
-        if rasterFormat not in ["jpg", "bmp", "png", "tif"]:
-            widget = QgsMessageBar.createMessage(
-                "Export as raster", "Unsupported file format: %s" % format)
-            self.iface.messageBar().pushWidget(
-                widget,  QgsMessageBar.WARNING, 5)
-            return
 
         try:
-
             originalWidth = layer.image.width()
             originalHeight = layer.image.height()
-
-            # maintain at least the original resolution of the raster
-            ratio = layer.xScale / layer.yScale
-            if ratio > 1:
-                # increase x
-                scaleX = ratio
-                scaleY = 1
-            else:
-                # increase y
-                scaleX = 1
-                scaleY = 1. / ratio
-
             radRotation = layer.rotation * math.pi / 180
 
-            width = abs(scaleX * originalWidth * math.cos(radRotation)) + \
-                abs(scaleY * originalHeight * math.sin(radRotation))
-            height = abs(scaleX * originalWidth * math.sin(radRotation)) + \
-                abs(scaleY * originalHeight * math.cos(radRotation))
+            if isPutRotationInWorldFile:
+                # keep the image as is and put all transformation params
+                # in world file
+                img = layer.image
 
-            qDebug("wh %f,%f" % (width, height))
+                a = layer.xScale * math.cos(radRotation)
+                # sin instead of -sin because angle in CW
+                b = -layer.yScale * math.sin(radRotation)
+                d = layer.xScale * -math.sin(radRotation)
+                e = -layer.yScale * math.cos(radRotation)
+                c = layer.center.x() - (a * (originalWidth - 1) / 2 +
+                                        b * (originalHeight - 1) / 2)
+                f = layer.center.y() - (d * (originalWidth - 1) / 2 +
+                                        e * (originalHeight - 1) / 2)
 
-            img = QImage(QSize(math.ceil(width), math.ceil(height)),
-                         QImage.Format_ARGB32)
-            # transparent background
-            img.fill(QColor(0, 0, 0, 0))
+            else:
+                # transform the image with rotation and scaling between the
+                # axes
+                # maintain at least the original resolution of the raster
+                ratio = layer.xScale / layer.yScale
+                if ratio > 1:
+                    # increase x
+                    scaleX = ratio
+                    scaleY = 1
+                else:
+                    # increase y
+                    scaleX = 1
+                    scaleY = 1. / ratio
 
-            painter = QPainter(img)
-            painter.setRenderHint(QPainter.Antialiasing, True)
+                width = abs(scaleX * originalWidth * math.cos(radRotation)) + \
+                    abs(scaleY * originalHeight * math.sin(radRotation))
+                height = abs(scaleX * originalWidth * math.sin(radRotation)) + \
+                    abs(scaleY * originalHeight * math.cos(radRotation))
 
-            rect = QRectF(QPointF(-layer.image.width() / 2.0,
-                                  -layer.image.height() / 2.0),
-                          QPointF(layer.image.width() / 2.0,
-                                  layer.image.height() / 2.0))
+                qDebug("wh %f,%f" % (width, height))
 
-            painter.translate(QPointF(width / 2.0, height / 2.0))
-            painter.rotate(layer.rotation)
-            painter.scale(scaleX, scaleY)
-            painter.drawImage(rect, layer.image)
-            painter.end()
+                img = QImage(QSize(math.ceil(width), math.ceil(height)),
+                             QImage.Format_ARGB32)
+                # transparent background
+                img.fill(QColor(0, 0, 0, 0))
+
+                painter = QPainter(img)
+                painter.setRenderHint(QPainter.Antialiasing, True)
+
+                rect = QRectF(QPointF(-layer.image.width() / 2.0,
+                                      -layer.image.height() / 2.0),
+                              QPointF(layer.image.width() / 2.0,
+                                      layer.image.height() / 2.0))
+
+                painter.translate(QPointF(width / 2.0, height / 2.0))
+                painter.rotate(layer.rotation)
+                painter.scale(scaleX, scaleY)
+                painter.drawImage(rect, layer.image)
+                painter.end()
+
+                extent = layer.extent()
+                a = extent.width() / width
+                e = -extent.height() / height
+                # 2nd term because (0,0) of world file is on center of upper left
+                # pixel instead of upper left corner of that pixel
+                c = extent.xMinimum() + a / 2
+                f = extent.yMaximum() + e / 2
+                b = d = 0.0
 
             img.save(rasterPath, rasterFormat)
 
-            extent = layer.extent()
-            a = extent.width() / width
-            e = -extent.height() / height
-            # 2nd term because (0,0) of world file is on center of upper left
-            # pixel instead of upper left corner of that pixel
-            c = extent.xMinimum() + a / 2
-            f = extent.yMaximum() + e / 2
-            b = d = 0.0
             worldFilePath = rasterPath[:-3]
             if rasterFormat == "jpg":
-                worldFilePath += "jpw"
+                worldFilePath += "jgw"
             elif rasterFormat == "png":
                 worldFilePath += "pgw"
             elif rasterFormat == "bmp":
@@ -123,15 +129,6 @@ class ExportAsRasterCommand(object):
                 "See QGIS Message log for details.")
             self.iface.messageBar().pushWidget(
                 widget, Qgis.Critical, 5)
-            return
-
-    def getRasterPath(self, originalPath):
-        filepath, _ = os.path.splitext(originalPath)
-        filepath += "_georeferenced.png"
-        filepath, _ = QFileDialog.getSaveFileName(
-            None, "Export as raster", filepath,
-            "Images (*.png *.bmp *.jpg *.tif)")
-        return filepath
 
     def auxContent(self, crs):
         content = """<PAMDataset>

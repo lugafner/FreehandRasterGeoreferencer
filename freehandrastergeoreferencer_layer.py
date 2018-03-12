@@ -19,7 +19,7 @@ from PyQt5.QtGui import QImageReader, QPainter, QColor
 from qgis.core import (QgsPluginLayer, QgsPointXY, QgsProject, Qgis,
                        QgsCoordinateTransform, QgsRectangle,
                        QgsCoordinateReferenceSystem, QgsPluginLayerType,
-                       QgsDataProvider, QgsMapLayerRenderer)
+                       QgsDataProvider, QgsMapLayerRenderer, QgsMessageLog)
 
 from .loaderrordialog import LoadErrorDialog
 from . import utils
@@ -210,15 +210,24 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                     self.commitTransformParameters()
 
     def initializeExistingGeoreferencing(self, dataset, georef):
-        # assume georef only has translation and scaling
-        # since rotation not supported by QGIS or ArcGIS
-        self.setRotation(0.0)
-        sx, sy = georef[1], georef[5]
-        center = QgsPointXY(georef[0] + sx * self.image.width() / 2,
-                            georef[3] + sy * self.image.height() / 2)
+        # georef can have scaling, rotation or translation
+        rotation = 180 / math.pi * -math.atan2(georef[4], georef[1])
+        sx = math.sqrt(georef[1] ** 2 + georef[4] ** 2)
+        sy = math.sqrt(georef[2] ** 2 + georef[5] ** 2)
+        i_center_x = self.image.width() / 2
+        i_center_y = self.image.height() / 2
+        center = QgsPointXY(georef[0] + georef[1] * i_center_x +
+                            georef[2] * i_center_y,
+                            georef[3] + georef[4] * i_center_x +
+                            georef[5] * i_center_y)
+
+        qDebug(repr(rotation) + " " + repr((sx, sy)) + " " +
+               repr(center))
+
+        self.setRotation(rotation)
         self.setCenter(center)
         # keep yScale positive
-        self.setScale(sx, -sy)
+        self.setScale(sx, sy)
         self.commitTransformParameters()
 
         crs_wkt = dataset.GetProjection()
@@ -238,7 +247,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                         Qgis.Warning,
                         5)
                     message_shown = True
-                except Exception:
+                except Exception as ex:
+                    QgsMessageLog.logMessage(repr(ex))
                     self.showBarMessage(
                         "CRS does not match",
                         "Found existing georeferencing in raster but "

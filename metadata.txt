@@ -3,7 +3,7 @@ name = Freehand raster georeferencer
 qgisMinimumVersion=3.0
 description = Interactive georeferencing of rasters
 about = Tools to georeference a raster interactively (move, rotate, scale, export...)
-version = 0.5.3
+version = 0.5.3.1
 author = Guilhem Vellut
 email = guilhem.vellut@gmail.com
 tags = raster,georeferencing
@@ -15,7 +15,9 @@ experimental = False
 deprecated = False
 category = Raster
 changelog = 
- 	0.5.3
+    0.5.3.1
+        * Added support for rotation in import and export of georeferencing
+    0.5.3
         * FIX #5 Initial georeference is read
     0.4.1
         * Same features as v0.4.0, updated to run with QGIS3
@@ -23,10 +25,10 @@ changelog =
         * FIX #10 Added dialog in scale tool to enter scale and DPI (contributed by @Dkrav-UA). The scale in X and Y will be computed based on the values entered.
     0.3.0
         * FIX #2 Added option for scale tool to maintain the relative scale in x and y dimension, using Ctrl modifier
-		* FIX #4 Corrected issue with accented file paths on Windows (Thanks to SzieberthAdam)
-		* FIX #8 Added opening and saving of TIFF files
-		* Added "Georeference with 2 Points" tool (contributed by Sebastien Barre)
-		* Added option for Rotate tool to rotate around point, using Ctrl modifier (contributed by Sebastien Barre)
-		* Changed the location of "Freehand Raster Georeferencer" menu, now under the Raster menu
-	0.2.0 
+        * FIX #4 Corrected issue with accented file paths on Windows (Thanks to SzieberthAdam)
+        * FIX #8 Added opening and saving of TIFF files
+        * Added "Georeference with 2 Points" tool (contributed by Sebastien Barre)
+        * Added option for Rotate tool to rotate around point, using Ctrl modifier (contributed by Sebastien Barre)
+        * Changed the location of "Freehand Raster Georeferencer" menu, now under the Raster menu
+    0.2.0 
 	    * First public release for QGIS 2

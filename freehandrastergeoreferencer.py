@@ -16,14 +16,18 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction
 from qgis.core import QgsApplication, QgsMapLayer, QgsProject
 
-from .freehandrastergeoreferencer_commands import ExportAsRasterCommand
-from .freehandrastergeoreferencer_layer import \
-    FreehandRasterGeoreferencerLayerType, FreehandRasterGeoreferencerLayer
-from .freehandrastergeoreferencer_maptools import MoveRasterMapTool,\
-    RotateRasterMapTool, ScaleRasterMapTool, AdjustRasterMapTool,\
-    GeorefRasterBy2PointsMapTool
-from .freehandrastergeoreferencerdialog import \
-    FreehandRasterGeoreferencerDialog
+from .freehandrastergeoreferencer_commands import ExportGeorefRasterCommand
+from .freehandrastergeoreferencer_layer import (
+    FreehandRasterGeoreferencerLayerType, FreehandRasterGeoreferencerLayer)
+from .freehandrastergeoreferencer_maptools import (MoveRasterMapTool,
+                                                   RotateRasterMapTool,
+                                                   ScaleRasterMapTool,
+                                                   AdjustRasterMapTool,
+                                                   GeorefRasterBy2PointsMapTool)
+from .freehandrastergeoreferencerdialog import (
+    FreehandRasterGeoreferencerDialog)
+from .exportgeorefrasterdialog import (
+    ExportGeorefRasterDialog)
 from . import resources_rc  # noqa
 from . import utils
 
@@ -110,7 +114,7 @@ class FreehandRasterGeoreferencer(object):
         self.actionExport = QAction(
             QIcon(":/plugins/freehandrastergeoreferencer/iconExport.png"),
             "Export raster with world file", self.iface.mainWindow())
-        self.actionExport.triggered.connect(self.exportAsRaster)
+        self.actionExport.triggered.connect(self.exportGeorefRaster)
 
         # Add toolbar button and menu item for AddLayer
         self.iface.layerToolBar().addAction(self.actionAddLayer)
@@ -135,6 +139,7 @@ class FreehandRasterGeoreferencer(object):
         QgsApplication.pluginLayerRegistry().addPluginLayerType(self.layerType)
 
         self.dialogAddLayer = FreehandRasterGeoreferencerDialog()
+        self.dialogExportGeorefRaster = ExportGeorefRasterDialog()
 
         self.moveTool = MoveRasterMapTool(self.iface)
         self.moveTool.setAction(self.actionMoveRaster)
@@ -276,7 +281,13 @@ class FreehandRasterGeoreferencer(object):
         tr = max(layer.transparency - 10, 0)
         layer.transparencyChanged(tr)
 
-    def exportAsRaster(self):
+    def exportGeorefRaster(self):
         layer = self.iface.activeLayer()
-        exportCommand = ExportAsRasterCommand(self.iface)
-        exportCommand.exportAsRaster(layer)
+        self.dialogExportGeorefRaster.clear(layer)
+        self.dialogExportGeorefRaster.show()
+        result = self.dialogExportGeorefRaster.exec_()
+        if result == 1:
+            exportCommand = ExportGeorefRasterCommand(self.iface)
+            exportCommand.exportGeorefRaster(
+                layer, self.dialogExportGeorefRaster.imagePath,
+                self.dialogExportGeorefRaster.isPutRotationInWorldFile)
