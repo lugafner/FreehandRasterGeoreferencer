@@ -22,10 +22,10 @@ SETTING_BROWSER_RASTER_DIR = "browseRasterDir"
 
 
 def toRelativeToQGS(imagePath):
-    if os.path.isabs(imagePath):
+    qgsPath = QgsProject.instance().fileName()
+    if qgsPath and os.path.isabs(imagePath):
         # Make it relative to current project if image below QGS
         imageFolder, imageName = os.path.split(imagePath)
-        qgsPath = QgsProject.instance().fileName()
         qgsFolder, _ = os.path.split(qgsPath)
         imageFolder = os.path.abspath(imageFolder)
         qgsFolder = os.path.abspath(qgsFolder)

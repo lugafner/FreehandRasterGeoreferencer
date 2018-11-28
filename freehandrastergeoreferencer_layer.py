@@ -496,6 +496,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
     def writeXml(self, node, doc, context):
         element = node.toElement()
+        self.writeCustomProperties(node, doc)
         element.setAttribute("type", "plugin")
         element.setAttribute(
             "name", FreehandRasterGeoreferencerLayer.LAYER_TYPE)
