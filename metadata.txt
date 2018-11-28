@@ -3,7 +3,7 @@ name = Freehand raster georeferencer
 qgisMinimumVersion=3.0
 description = Interactive georeferencing of rasters
 about = Tools to georeference a raster interactively (move, rotate, scale, export...)
-version = 0.5.3.1
+version = 0.5.3.2
 author = Guilhem Vellut
 email = guilhem.vellut@gmail.com
 tags = raster,georeferencing
@@ -15,6 +15,9 @@ experimental = False
 deprecated = False
 category = Raster
 changelog = 
+    0.5.3.2
+        * Corrected issue with the saving of plugin layer custom properties on QGIS 3.4
+        * Corrected issue with the processing of relative image paths with an unsaved project on macOS
     0.5.3.1
         * Added support for rotation in import and export of georeferencing
     0.5.3
