@@ -13,7 +13,7 @@
 import os.path
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QAction, QDoubleSpinBox, QMessageBox
 from qgis.core import QgsApplication, QgsMapLayer, QgsProject
 
 from .freehandrastergeoreferencer_commands import ExportGeorefRasterCommand
@@ -123,11 +123,23 @@ class FreehandRasterGeoreferencer(object):
         self.iface.addPluginToRasterMenu(
             FreehandRasterGeoreferencer.PLUGIN_MENU, self.actionAddLayer)
 
+        self.spinBox = QDoubleSpinBox(self.iface.mainWindow())
+        self.spinBox.setDecimals(1)
+        self.spinBox.setMinimum(-180)
+        self.spinBox.setMaximum(180)
+        self.spinBox.setSingleStep(0.1)
+        self.spinBox.setValue(0.0)
+        self.spinBox.setToolTip("Rotation value")
+        self.spinBox.setObjectName("FreehandRasterGeoreferencer_spinbox")
+        self.spinBox.setKeyboardTracking(False)
+        self.spinBox.valueChanged.connect(self.spinboxValueChangeEvent)
+
         # create toolbar for this plugin
         self.toolbar = self.iface.addToolBar("Freehand raster georeferencing")
         self.toolbar.addAction(self.actionAddLayer)
         self.toolbar.addAction(self.actionMoveRaster)
         self.toolbar.addAction(self.actionRotateRaster)
+        self.toolbar.addWidget(self.spinBox)
         self.toolbar.addAction(self.actionScaleRaster)
         self.toolbar.addAction(self.actionAdjustRaster)
         self.toolbar.addAction(self.actionGeoref2PRaster)
@@ -196,6 +208,8 @@ class FreehandRasterGeoreferencer(object):
             self.actionDecreaseTransparency.setEnabled(True)
             self.actionIncreaseTransparency.setEnabled(True)
             self.actionExport.setEnabled(True)
+            self.spinBox.setEnabled(True)
+            self.spinBox.setValue(layer.rotation)
 
             if self.currentTool:
                 self.currentTool.reset()
@@ -209,6 +223,7 @@ class FreehandRasterGeoreferencer(object):
             self.actionDecreaseTransparency.setEnabled(False)
             self.actionIncreaseTransparency.setEnabled(False)
             self.actionExport.setEnabled(False)
+            self.spinBox.setEnabled(False)
 
             if self.currentTool:
                 self.currentTool.reset()
@@ -292,3 +307,9 @@ class FreehandRasterGeoreferencer(object):
             exportCommand.exportGeorefRaster(
                 layer, self.dialogExportGeorefRaster.imagePath,
                 self.dialogExportGeorefRaster.isPutRotationInWorldFile)
+
+    def spinboxValueChangeEvent(self, val):
+        layer = self.iface.activeLayer()
+        layer.setRotation(val)
+        layer.repaint()
+        layer.commitTransformParameters()

@@ -14,7 +14,7 @@ import math
 from operator import itemgetter
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QInputDialog, QMessageBox, QDoubleSpinBox
 from qgis.core import QgsPointXY, QgsGeometry, QgsWkbTypes
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 
@@ -196,13 +196,16 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
         if self.isRotationAroundPoint:
             self.layer.moveCenterFromPointRotate(
                 self.startPoint, rotation, 1, 1)
-        self.layer.setRotation(self.layer.rotation + rotation)
-
+        val = self.layer.rotation + rotation
+        self.layer.setRotation(val)
         setLayerVisible(self.iface, self.layer,
                         self.isLayerVisible)
         self.layer.repaint()
 
         self.layer.commitTransformParameters()
+        if val > 180:
+            val = val - 360
+        self.iface.mainWindow().findChild(QDoubleSpinBox,'FreehandRasterGeoreferencer_spinbox').setValue(val)
 
     def canvasMoveEvent(self, e):
         if not self.isEmittingPoint:
@@ -673,7 +676,8 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
             xScale = yScale = self.computeScale()
             self.layer.moveCenterFromPointRotate(
                 self.firstPoint, rotation, xScale, yScale)
-            self.layer.setRotation(self.layer.rotation + rotation)
+            val = self.layer.rotation + rotation
+            self.layer.setRotation(val)
             self.layer.setScale(self.layer.xScale * xScale,
                                 self.layer.yScale * yScale)
 
@@ -682,6 +686,10 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
             self.layer.repaint()
 
             self.layer.commitTransformParameters()
+
+            if val > 180:
+                val = val - 360
+            self.iface.mainWindow().findChild(QDoubleSpinBox, 'FreehandRasterGeoreferencer_spinbox').setValue(val)
 
             self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
             self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)
