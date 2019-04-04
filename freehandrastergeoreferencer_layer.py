@@ -42,7 +42,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
         self.title = title
         self.filepath = filepath
-
+        self.screenExtent = screenExtent
         # set custom properties
         self.setCustomProperty("title", title)
         self.setCustomProperty("filepath", self.filepath)
@@ -292,6 +292,27 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         else:
             # all width
             self.setScale(wratio, wratio)
+
+    def replaceImage(self, filepath, title):
+        self.title = title
+        self.filepath = filepath
+
+         # set custom properties
+        self.setCustomProperty("title", title)
+        self.setCustomProperty("filepath", self.filepath)
+        self.setName(title)
+        reader = QImageReader(filepath)
+        self.image = reader.read()
+        self.repaint()
+
+    def clone(self):
+        layer = FreehandRasterGeoreferencerLayer(self.plugin, self.filepath, self.title, self.screenExtent)
+        layer.center = self.center
+        layer.rotation = self.rotation
+        layer.xScale = self.xScale
+        layer.yScale = self.yScale
+        layer.commitTransformParameters()
+        return layer
 
     def getAbsoluteFilepath(self):
         if not os.path.isabs(self.filepath):
