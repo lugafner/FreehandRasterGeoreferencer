@@ -76,10 +76,13 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.yScale = yScale
 
     def setRotation(self, rotation):
+        rotation = round(rotation, 1)
         if rotation > 360:
             rotation -= 360
         elif rotation < 0:
             rotation += 360
+        if rotation > 180:
+            rotation -= 360
         self.rotation = rotation
 
     def setCenter(self, center):
