@@ -25,11 +25,19 @@ class FreehandRasterGeoreferencerDialog(QDialog,
     def __init__(self):
         QDialog.__init__(self)
         self.setupUi(self)
-
+        self.pushButtonAdd.clicked.connect(self.accept)
+        self.pushButtonCancel.clicked.connect(self.reject)
         self.pushButtonBrowse.clicked.connect(self.showBrowserDialog)
+        self.pushButtonReplace.clicked.connect(self.replaceImage)
 
-    def clear(self):
-        self.lineEditImagePath.setText("")
+    def clear(self, layer):
+        self.layer = layer
+        if layer is None:
+            imagepath = ""
+        else:
+            imagepath = layer.filepath
+
+        self.lineEditImagePath.setText(imagepath)
 
     def showBrowserDialog(self):
         bDir, found = QgsProject.instance().readEntry(
@@ -46,6 +54,12 @@ class FreehandRasterGeoreferencerDialog(QDialog,
             QgsProject.instance().writeEntry(utils.SETTINGS_KEY,
                                              utils.SETTING_BROWSER_RASTER_DIR,
                                              bDir)
+
+    def replaceImage(self):
+        imagepath = self.lineEditImagePath.text()
+        imagename, _ = os.path.splitext(os.path.basename(imagepath))
+        self.layer.replaceImage(imagepath, imagename)
+        self.close()
 
     def accept(self):
         result, message, details = self.validate()

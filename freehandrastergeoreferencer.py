@@ -13,7 +13,7 @@
 import os.path
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QDoubleSpinBox, QMessageBox
+from PyQt5.QtWidgets import QAction, QDoubleSpinBox
 from qgis.core import QgsApplication, QgsMapLayer, QgsProject
 
 from .freehandrastergeoreferencer_commands import ExportGeorefRasterCommand
@@ -152,6 +152,7 @@ class FreehandRasterGeoreferencer(object):
         QgsApplication.pluginLayerRegistry().addPluginLayerType(self.layerType)
 
         self.dialogAddLayer = FreehandRasterGeoreferencerDialog()
+        self.dialogAddLayer.pushButtonDuplicate.clicked.connect(self.duplicateLayer)
         self.dialogExportGeorefRaster = ExportGeorefRasterDialog()
 
         self.moveTool = MoveRasterMapTool(self.iface)
@@ -210,6 +211,9 @@ class FreehandRasterGeoreferencer(object):
             self.actionExport.setEnabled(True)
             self.spinBox.setEnabled(True)
             self.spinBox.setValue(layer.rotation)
+            self.dialogAddLayer.pushButtonDuplicate.setEnabled(True)
+            self.dialogAddLayer.pushButtonReplace.setEnabled(True)
+            self.layer = layer
 
             if self.currentTool:
                 self.currentTool.reset()
@@ -224,6 +228,9 @@ class FreehandRasterGeoreferencer(object):
             self.actionIncreaseTransparency.setEnabled(False)
             self.actionExport.setEnabled(False)
             self.spinBox.setEnabled(False)
+            self.dialogAddLayer.pushButtonDuplicate.setEnabled(False)
+            self.dialogAddLayer.pushButtonReplace.setEnabled(False)
+            self.layer = None
 
             if self.currentTool:
                 self.currentTool.reset()
@@ -233,11 +240,17 @@ class FreehandRasterGeoreferencer(object):
                 self.currentTool = None
 
     def addLayer(self):
-        self.dialogAddLayer.clear()
+        self.dialogAddLayer.clear(self.layer)
         self.dialogAddLayer.show()
         result = self.dialogAddLayer.exec_()
         if result == 1:
             self.createFreehandRasterGeoreferencerLayer()
+
+    def duplicateLayer(self):
+        layer = self.iface.activeLayer().clone()
+        QgsProject.instance().addMapLayer(layer)
+        self.layers[layer.id()] = layer
+        self.dialogAddLayer.close()
 
     def createFreehandRasterGeoreferencerLayer(self):
         imagePath = self.dialogAddLayer.lineEditImagePath.text()
