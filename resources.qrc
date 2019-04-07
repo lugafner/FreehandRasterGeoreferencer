@@ -10,5 +10,6 @@
         <file>iconTransparencyIncrease.png</file>
         <file>iconTransparencyDecrease.png</file>
         <file>iconExport.png</file>
+        <file>iconUndo.png</file>
     </qresource>
 </RCC>

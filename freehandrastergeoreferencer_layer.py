@@ -43,6 +43,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.title = title
         self.filepath = filepath
         self.screenExtent = screenExtent
+        self.history = []
         # set custom properties
         self.setCustomProperty("title", title)
         self.setCustomProperty("filepath", self.filepath)
