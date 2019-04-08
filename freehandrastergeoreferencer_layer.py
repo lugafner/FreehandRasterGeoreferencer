@@ -14,12 +14,13 @@ import math
 import os
 
 from osgeo import gdal
-from PyQt5.QtCore import qDebug, QRectF, QPointF, QPoint, Qt
+from PyQt5.QtCore import qDebug, QRectF, QPointF, QPoint, Qt, QFileInfo, QSize, QSettings
 from PyQt5.QtGui import QImageReader, QPainter, QColor
 from qgis.core import (QgsPluginLayer, QgsPointXY, QgsProject, Qgis,
                        QgsCoordinateTransform, QgsRectangle,
                        QgsCoordinateReferenceSystem, QgsPluginLayerType,
-                       QgsDataProvider, QgsMapLayerRenderer, QgsMessageLog)
+                       QgsDataProvider, QgsMapLayerRenderer, QgsMessageLog,
+                       QgsRasterLayer)
 
 from .loaderrordialog import LoadErrorDialog
 from . import utils
@@ -181,8 +182,21 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
                 del loadErrorDialog
 
-            reader = QImageReader(filepath)
-            self.image = reader.read()
+            fileInfo = QFileInfo(filepath)
+            ext = fileInfo.suffix()
+            if ext == "pdf":
+                s = QSettings()
+                oldValidation = s.value("/Projections/defaultBehavior")
+                s.setValue("/Projections/defaultBehavior", "useGlobal") # for not asking about crs
+                path = fileInfo.filePath()
+                baseName = fileInfo.baseName()
+                layer = QgsRasterLayer(path, baseName)
+                self.image = layer.previewAsImage(QSize(layer.width(),layer.height()))
+                s.setValue("/Projections/defaultBehavior", oldValidation)
+            else:
+                reader = QImageReader(filepath)
+                self.image = reader.read()
+
             self.initialized = True
             self.initializing = False
 
@@ -302,8 +316,21 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.setCustomProperty("title", title)
         self.setCustomProperty("filepath", self.filepath)
         self.setName(title)
-        reader = QImageReader(filepath)
-        self.image = reader.read()
+
+        fileInfo = QFileInfo(filepath)
+        ext = fileInfo.suffix()
+        if ext == "pdf":
+            s = QSettings()
+            oldValidation = s.value("/Projections/defaultBehavior")
+            s.setValue("/Projections/defaultBehavior", "useGlobal")  # for not asking about crs
+            path = fileInfo.filePath()
+            baseName = fileInfo.baseName()
+            layer = QgsRasterLayer(path, baseName)
+            self.image = layer.previewAsImage(QSize(layer.width(), layer.height()))
+            s.setValue("/Projections/defaultBehavior", oldValidation)
+        else:
+            reader = QImageReader(filepath)
+            self.image = reader.read()
         self.repaint()
 
     def clone(self):
