@@ -12,23 +12,26 @@
 
 import os.path
 
-from PyQt5.QtWidgets import QDialog, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QAction, QDialog, QFileDialog, QMenu, QMessageBox
 from qgis.core import QgsProject
 
-from .ui_freehandrastergeoreferencer import Ui_FreehandRasterGeoreferencer
 from . import utils
+from .ui_freehandrastergeoreferencer import Ui_FreehandRasterGeoreferencer
 
 
 class FreehandRasterGeoreferencerDialog(QDialog,
                                         Ui_FreehandRasterGeoreferencer):
+    REPLACE=2
+    DUPLICATE=3
 
     def __init__(self):
         QDialog.__init__(self)
         self.setupUi(self)
-        self.pushButtonAdd.clicked.connect(self.accept)
+        self.configureAdvancedMenu()
+        self.pushButtonAdd.clicked.connect(self.addNew)
         self.pushButtonCancel.clicked.connect(self.reject)
         self.pushButtonBrowse.clicked.connect(self.showBrowserDialog)
-        self.pushButtonReplace.clicked.connect(self.replaceImage)
+        self.toolButtonAdvanced.clicked.connect(self.showAdvancedMenu)
 
     def clear(self, layer):
         self.layer = layer
@@ -55,16 +58,39 @@ class FreehandRasterGeoreferencerDialog(QDialog,
                                              utils.SETTING_BROWSER_RASTER_DIR,
                                              bDir)
 
-    def replaceImage(self):
-        imagepath = self.lineEditImagePath.text()
-        imagename, _ = os.path.splitext(os.path.basename(imagepath))
-        self.layer.replaceImage(imagepath, imagename)
-        self.close()
+    def configureAdvancedMenu(self):
+        action1 = QAction('Replace image for selected layer', self)
+        action2 = QAction('Duplicate selected layer', self)
 
-    def accept(self):
+        action1.triggered.connect(self.replaceImage)
+        action2.triggered.connect(self.duplicateLayer)
+
+        menu = QMenu(self)
+        menu.addAction(action1)
+        menu.addAction(action2)
+
+        self.toolButtonAdvanced.setMenu(menu)
+
+    def showAdvancedMenu(self):
+        self.toolButtonAdvanced.showMenu()
+
+    def replaceImage(self):
+        self.accept(self.REPLACE)
+
+    def duplicateLayer(self):
+        self.accept(self.DUPLICATE, False)
+
+    def addNew(self):
+        self.accept()
+
+    def accept(self, retValue=QDialog.Accepted, validate=True):
+        if not validate:
+            self.done(retValue)
+            return
+
         result, message, details = self.validate()
         if result:
-            self.done(QDialog.Accepted)
+            self.done(retValue)
         else:
             msgBox = QMessageBox()
             msgBox.setWindowTitle("Error")

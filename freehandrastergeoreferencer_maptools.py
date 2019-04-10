@@ -14,8 +14,9 @@ import math
 from operator import itemgetter
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QInputDialog, QMessageBox, QDoubleSpinBox
-from qgis.core import QgsPointXY, QgsGeometry, QgsWkbTypes
+from PyQt5.QtWidgets import (QApplication, QDoubleSpinBox, QInputDialog,
+                             QMessageBox)
+from qgis.core import QgsGeometry, QgsPointXY, QgsWkbTypes
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 
 from .rastershadowmapcanvasitem import RasterShadowMapCanvasItem
@@ -185,8 +186,10 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
 
         rotation = self.computeRotation()
         self.showRotation(rotation)
-        self.layer.history.append({"action": "rotation", "rotation": None, "center": self.layer.center}) # rotation set
 
+        self.layer.history.append({"action": "rotation", "rotation": self.layer.rotation, 
+            "center": self.layer.center}) # rotation set
+        
     def canvasReleaseEvent(self, e):
         self.isEmittingPoint = False
 
@@ -199,12 +202,14 @@ class RotateRasterMapTool(QgsMapToolEmitPoint):
             self.layer.moveCenterFromPointRotate(
                 self.startPoint, rotation, 1, 1)
         val = self.layer.rotation + rotation
-        if val > 180:
-            val = val - 360
-        # repainting is performed within the setValue trigger event.
-        self.iface.mainWindow().findChild(QDoubleSpinBox,'FreehandRasterGeoreferencer_spinbox').setValue(val)
+    
+        self.layer.setRotation(val)
+
         setLayerVisible(self.iface, self.layer,
                         self.isLayerVisible)
+        self.layer.repaint()
+
+        self.layer.commitTransformParameters()
 
 
     def canvasMoveEvent(self, e):
@@ -659,7 +664,7 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
             self.showRotationScale(rotation, xScale, yScale)
             self.layer.history.append(
                 {"action": "2pointsB", "center": self.layer.center, "xScale": self.layer.xScale,
-                 "yScale": self.layer.yScale, "rotation": None})
+                 "yScale": self.layer.yScale, "rotation": self.layer.rotation})
 
     def canvasReleaseEvent(self, e):
         self.isEmittingPoint = False
@@ -686,16 +691,15 @@ class GeorefRasterBy2PointsMapTool(QgsMapToolEmitPoint):
             xScale = yScale = self.computeScale()
             self.layer.moveCenterFromPointRotate(
                 self.firstPoint, rotation, xScale, yScale)
+            self.layer.setRotation(self.layer.rotation + rotation)
             self.layer.setScale(self.layer.xScale * xScale,
                                 self.layer.yScale * yScale)
-            val = self.layer.rotation + rotation
-            if val > 180:
-                val = val - 360
-            self.iface.mainWindow().findChild(QDoubleSpinBox, 'FreehandRasterGeoreferencer_spinbox').setValue(val)
 
             setLayerVisible(self.iface, self.layer,
                             self.isLayerVisible)
+            self.layer.repaint()
 
+            self.layer.commitTransformParameters()
 
             self.rubberBandDisplacement.reset(QgsWkbTypes.LineGeometry)
             self.rubberBandExtent.reset(QgsWkbTypes.LineGeometry)

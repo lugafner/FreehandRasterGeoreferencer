@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>460</width>
-    <height>93</height>
+    <width>464</width>
+    <height>98</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -58,48 +58,16 @@
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButtonDuplicate">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>60</y>
-     <width>91</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Duplicate Layer</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButtonReplace">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>260</x>
-     <y>60</y>
-     <width>91</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Replace Image</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButtonAdd">
    <property name="enabled">
     <bool>true</bool>
    </property>
    <property name="geometry">
     <rect>
-     <x>160</x>
-     <y>60</y>
+     <x>262</x>
+     <y>58</y>
      <width>91</width>
-     <height>23</height>
+     <height>30</height>
     </rect>
    </property>
    <property name="text">
@@ -112,14 +80,44 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>360</x>
-     <y>60</y>
+     <x>361</x>
+     <y>59</y>
      <width>91</width>
-     <height>23</height>
+     <height>29</height>
     </rect>
    </property>
    <property name="text">
     <string>Cancel</string>
+   </property>
+  </widget>
+  <widget class="QToolButton" name="toolButtonAdvanced">
+   <property name="geometry">
+    <rect>
+     <x>14</x>
+     <y>63</y>
+     <width>111</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Advanced...</string>
+   </property>
+   <property name="popupMode">
+    <enum>QToolButton::MenuButtonPopup</enum>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextBesideIcon</enum>
+   </property>
+   <property name="autoRaise">
+    <bool>true</bool>
+   </property>
+   <property name="arrowType">
+    <enum>Qt::NoArrow</enum>
    </property>
   </widget>
  </widget>

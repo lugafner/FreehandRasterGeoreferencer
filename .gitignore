@@ -7,4 +7,5 @@ resources_rc.py
 *.pydevproject
 *.settings
 fhrgr.zip
+.vscode
 

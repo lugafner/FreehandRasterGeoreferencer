@@ -3,7 +3,7 @@ name = Freehand raster georeferencer
 qgisMinimumVersion=3.0
 description = Interactive georeferencing of rasters
 about = Tools to georeference a raster interactively (move, rotate, scale, export...)
-version = 0.5.3.3
+version = 0.6.3.0
 author = Guilhem Vellut
 email = guilhem.vellut@gmail.com
 tags = raster,georeferencing
@@ -15,6 +15,10 @@ experimental = False
 deprecated = False
 category = Raster
 changelog = 
+    0.6.3.0
+        * Added support for pdf (contributed by Takayuki Mizutani @tmizu23)
+        * Added support for undo (contributed by Takayuki Mizutani @tmizu23)
+        * Added support for duplicate Layer and replace image (contributed by Takayuki Mizutani @tmizu23)
     0.5.3.3
         * Added support for rotation by spinbox value (contributed by Takayuki Mizutani @tmizu23)
     0.5.3.2

@@ -14,16 +14,18 @@ import math
 import os
 
 from osgeo import gdal
-from PyQt5.QtCore import qDebug, QRectF, QPointF, QPoint, Qt, QFileInfo, QSize, QSettings
-from PyQt5.QtGui import QImageReader, QPainter, QColor
-from qgis.core import (QgsPluginLayer, QgsPointXY, QgsProject, Qgis,
-                       QgsCoordinateTransform, QgsRectangle,
-                       QgsCoordinateReferenceSystem, QgsPluginLayerType,
-                       QgsDataProvider, QgsMapLayerRenderer, QgsMessageLog,
-                       QgsRasterLayer)
 
-from .loaderrordialog import LoadErrorDialog
+from PyQt5.QtCore import (QFileInfo, QPoint, QPointF, QRectF, QSettings, QSize,
+                          Qt, pyqtSignal, qDebug)
+from PyQt5.QtGui import QColor, QImageReader, QPainter
+from qgis.core import (Qgis, QgsCoordinateReferenceSystem,
+                       QgsCoordinateTransform, QgsDataProvider,
+                       QgsMapLayerRenderer, QgsMessageLog, QgsPluginLayer,
+                       QgsPluginLayerType, QgsPointXY, QgsProject,
+                       QgsRasterLayer, QgsRectangle)
+
 from . import utils
+from .loaderrordialog import LoadErrorDialog
 
 
 class LayerDefaultSettings:
@@ -34,6 +36,7 @@ class LayerDefaultSettings:
 class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
     LAYER_TYPE = "FreehandRasterGeoreferencerLayer"
+    transformParametersChanged = pyqtSignal(tuple)
 
     def __init__(self, plugin, filepath, title, screenExtent):
         QgsPluginLayer.__init__(
@@ -79,9 +82,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
     def setRotation(self, rotation):
         rotation = round(rotation, 1)
-        if rotation > 360:
-            rotation -= 360
-        elif rotation < 0:
+        # keep in -180,180 interval
+        if rotation < -180:
             rotation += 360
         if rotation > 180:
             rotation -= 360
@@ -98,6 +100,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.setCustomProperty("rotation", self.rotation)
         self.setCustomProperty("xCenter", self.center.x())
         self.setCustomProperty("yCenter", self.center.y())
+        self.transformParametersChanged.emit(
+            (self.xScale, self.yScale, self.rotation, self.center))
 
     def reprojectTransformParameters(self, oldCrs, newCrs):
         transform = QgsCoordinateTransform(oldCrs, newCrs,
