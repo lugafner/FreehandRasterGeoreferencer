@@ -216,6 +216,12 @@ class FreehandRasterGeoreferencer(object):
             self.actionExport.setEnabled(True)
             self.spinBoxRotate.setEnabled(True)
             self.spinBoxRotateValueSetValue(layer.rotation)
+            try:
+                # self.layer is the previously selected layer 
+                # in case it was a FRGR layer, disconnect the spinBox
+                self.layer.transformParametersChanged.disconnect()
+            except Exception:
+                pass
             layer.transformParametersChanged.connect(self.spinBoxRotateUpdate)
             self.dialogAddLayer.toolButtonAdvanced.setEnabled(True)
             self.actionUndo.setEnabled(True)
@@ -236,8 +242,7 @@ class FreehandRasterGeoreferencer(object):
             self.spinBoxRotate.setEnabled(False)
             self.spinBoxRotateValueSetValue(0)
             try:
-                self.layer.transformParametersChanged.disconnect(
-                    self.spinBoxRotateUpdate)
+                self.layer.transformParametersChanged.disconnect()
             except Exception:
                 pass
             self.dialogAddLayer.toolButtonAdvanced.setEnabled(False)
