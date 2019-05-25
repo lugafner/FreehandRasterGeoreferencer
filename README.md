@@ -10,7 +10,7 @@ In QGIS, open the "Plugins" > "Manage and install plugin" dialog. Install the "F
 
 ## From Github
 
-For QGIS 2, use the qgis2 branch. For QGIS 3 use the master branch.
+For QGIS 3 use the master branch. For QGIS 2, use the qgis2 branch.
 
 1. Download a ZIP of the repository or clone it using "git clone"
 2. The folder with the Python files should be directly under the directory with all the QGIS plugins (for example, ~/.qgis2/python/plugins/FreehandRasterGeoreferencer)
@@ -19,6 +19,8 @@ For QGIS 2, use the qgis2 branch. For QGIS 3 use the master branch.
     - Go to the plugin directory
     - Launch "build.bat" or "build.sh"
 4. The next time QGIS is opened, the plugin should be listed in the "Plugins" > "Manage and install plugin" dialog
+
+**Note that the QGIS 2 branch is considered legacy and no further development is planned at this point.**
 
 # Documentation
 
