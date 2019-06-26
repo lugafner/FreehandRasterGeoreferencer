@@ -8,4 +8,5 @@ resources_rc.py
 *.settings
 fhrgr.zip
 .vscode
-
+.env
+.python-version

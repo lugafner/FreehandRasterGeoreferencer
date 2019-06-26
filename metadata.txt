@@ -3,9 +3,9 @@ name = Freehand raster georeferencer
 qgisMinimumVersion=3.0
 description = Interactive georeferencing of rasters
 about = Tools to georeference a raster interactively (move, rotate, scale, export...)
-version = 0.6.3.0
+version = 0.7.0
 author = Guilhem Vellut
-email = guilhem.vellut@gmail.com
+email = g@vellut.com
 tags = raster,georeferencing
 homepage = http://gvellut.github.io/FreehandRasterGeoreferencer/
 tracker = https://github.com/gvellut/FreehandRasterGeoreferencer/issues
@@ -15,6 +15,9 @@ experimental = False
 deprecated = False
 category = Raster
 changelog = 
+    0.7.0
+        * Add LZW compression when writing TIFF
+        * Solved an issue with the rendering of large rasters when rotated and zoomed out
     0.6.3.0
         * Added support for pdf (contributed by Takayuki Mizutani @tmizu23)
         * Added support for undo (contributed by Takayuki Mizutani @tmizu23)
