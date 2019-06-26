@@ -12,9 +12,9 @@
 
 import math
 
-from PyQt5.QtCore import qDebug, QRectF, QPointF, QSize
-from PyQt5.QtGui import QImage, QPainter, QColor
-from qgis.core import QgsMessageLog, Qgis
+from PyQt5.QtCore import qDebug, QPointF, QRectF, QSize
+from PyQt5.QtGui import QColor, QImage, QImageWriter, QPainter
+from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMessageBar
 
 
@@ -24,7 +24,7 @@ class ExportGeorefRasterCommand(object):
         self.iface = iface
 
     def exportGeorefRaster(self, layer, rasterPath, isPutRotationInWorldFile):
-        rasterFormat = rasterPath[-3:]
+        rasterFormat = rasterPath[-3:].lower()
 
         try:
             originalWidth = layer.image.width()
@@ -74,6 +74,7 @@ class ExportGeorefRasterCommand(object):
 
                 painter = QPainter(img)
                 painter.setRenderHint(QPainter.Antialiasing, True)
+                # painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
                 rect = QRectF(QPointF(-layer.image.width() / 2.0,
                                       -layer.image.height() / 2.0),
@@ -95,7 +96,16 @@ class ExportGeorefRasterCommand(object):
                 f = extent.yMaximum() + e / 2
                 b = d = 0.0
 
-            img.save(rasterPath, rasterFormat)
+            if rasterFormat == "tif":
+                writer = QImageWriter()
+                # use LZW compression for tiff
+                # useful for scanned documents (mostly white)
+                writer.setCompression(1)
+                writer.setFormat(b"TIFF")
+                writer.setFileName(rasterPath)
+                writer.write(img)
+            else:
+                img.save(rasterPath, rasterFormat)
 
             worldFilePath = rasterPath[:-3]
             if rasterFormat == "jpg":
