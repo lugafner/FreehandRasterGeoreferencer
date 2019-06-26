@@ -15,14 +15,32 @@ import os
 
 from osgeo import gdal
 
-from PyQt5.QtCore import (QFileInfo, QPoint, QPointF, QRectF, QSettings, QSize,
-                          Qt, pyqtSignal, qDebug)
+from PyQt5.QtCore import (
+    pyqtSignal,
+    qDebug,
+    QFileInfo,
+    QPoint,
+    QPointF,
+    QRectF,
+    QSettings,
+    QSize,
+    Qt,
+)
 from PyQt5.QtGui import QColor, QImageReader, QPainter
-from qgis.core import (Qgis, QgsCoordinateReferenceSystem,
-                       QgsCoordinateTransform, QgsDataProvider,
-                       QgsMapLayerRenderer, QgsMessageLog, QgsPluginLayer,
-                       QgsPluginLayerType, QgsPointXY, QgsProject,
-                       QgsRasterLayer, QgsRectangle)
+from qgis.core import (
+    Qgis,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsDataProvider,
+    QgsMapLayerRenderer,
+    QgsMessageLog,
+    QgsPluginLayer,
+    QgsPluginLayerType,
+    QgsPointXY,
+    QgsProject,
+    QgsRasterLayer,
+    QgsRectangle,
+)
 
 from . import utils
 from .loaderrordialog import LoadErrorDialog
@@ -316,7 +334,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.title = title
         self.filepath = filepath
 
-         # set custom properties
+        # set custom properties
         self.setCustomProperty("title", title)
         self.setCustomProperty("filepath", self.filepath)
         self.setName(title)
@@ -510,6 +528,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
     def drawRaster(self, renderContext):
         painter = renderContext.painter()
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+
         self.map2pixel = renderContext.mapToPixel()
 
         scaleX = self.xScale / self.map2pixel.mapUnitsPerPixel()
@@ -522,7 +542,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         mapCenter = self.map2pixel.transform(self.center)
 
         # draw the image on the map canvas
-        painter.translate(QPoint(round(mapCenter.x()), round(mapCenter.y())))
+        painter.translate(QPointF(mapCenter.x(), mapCenter.y()))
         painter.rotate(self.rotation)
         painter.scale(scaleX, scaleY)
         painter.drawImage(rect, self.image)

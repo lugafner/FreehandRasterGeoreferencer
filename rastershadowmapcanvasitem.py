@@ -10,8 +10,9 @@
  ***************************************************************************/
 """
 
-from PyQt5.QtCore import QRect, QPoint
-from qgis.core import QgsRectangle, QgsPointXY
+from PyQt5.QtCore import QPointF, QRectF
+from PyQt5.QtGui import QPainter
+from qgis.core import QgsPointXY, QgsRectangle
 from qgis.gui import QgsMapCanvasItem
 
 
@@ -88,9 +89,9 @@ class RasterShadowMapCanvasItem(QgsMapCanvasItem):
         center = QgsPointXY(self.layer.center.x() + self.dx,
                             self.layer.center.y() + self.dy)
         return self.layer.transformedCornerCoordinates(center,
-                                                       self.layer.rotation,
-                                                       self.layer.xScale,
-                                                       self.layer.yScale)
+                                                       self.layer.rotation + self.drotation,
+                                                       self.layer.xScale * self.fxscale,
+                                                       self.layer.yScale * self.fyscale)
 
     def cornerCoordinatesFromPoint(self, startPoint):
         return self.layer.transformedCornerCoordinatesFromPoint(
@@ -108,11 +109,13 @@ class RasterShadowMapCanvasItem(QgsMapCanvasItem):
         scaleX = self.layer.xScale * self.fxscale / mapUPerPixel
         scaleY = self.layer.yScale * self.fyscale / mapUPerPixel
 
-        rect = QRect(QPoint(round(-self.layer.image.width() / 2.0),
-                            round(-self.layer.image.height() / 2.0)),
-                     QPoint(round(self.layer.image.width() / 2.0),
-                            round(self.layer.image.height() / 2.0)))
+        rect = QRectF(QPointF(-self.layer.image.width() / 2.0,
+                            -self.layer.image.height() / 2.0),
+                     QPointF(self.layer.image.width() / 2.0,
+                            self.layer.image.height() / 2.0))
         targetRect = self.boundingRect()
+
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
         # draw the image on the canvas item rectangle
         # center displacement already taken into account in canvas
