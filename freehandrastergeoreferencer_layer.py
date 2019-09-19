@@ -612,6 +612,9 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.setTransparency(val)
         self.repaintRequested.emit()
 
+    def setTransformContext(self, transformContext):
+        pass
+
 
 class FreehandRasterGeoreferencerLayerType(QgsPluginLayerType):
     def __init__(self, plugin):
