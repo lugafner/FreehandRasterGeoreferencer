@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  *                                                                         *
@@ -20,12 +19,10 @@ class PropertiesDialog(QDialog, Ui_Dialog):
         QDialog.__init__(self)
         # set up the user interface
         self.setupUi(self)
-        self.setWindowTitle("%s - %s" %
-                            (self.tr("Layer Properties"), layer.name()))
+        self.setWindowTitle("%s - %s" % (self.tr("Layer Properties"), layer.name()))
 
         self.layer = layer
-        self.horizontalSlider_Transparency.valueChanged.connect(
-            self.sliderChanged)
+        self.horizontalSlider_Transparency.valueChanged.connect(self.sliderChanged)
         self.spinBox_Transparency.valueChanged.connect(self.spinBoxChanged)
 
         self.textEdit_Properties.setText(layer.metadata())

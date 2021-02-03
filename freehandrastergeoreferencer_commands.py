@@ -19,12 +19,11 @@ from qgis.gui import QgsMessageBar
 
 
 class ExportGeorefRasterCommand(object):
-
     def __init__(self, iface):
         self.iface = iface
 
     def exportGeorefRaster(self, layer, rasterPath, isPutRotationInWorldFile):
-        _, rasterFormat = os.path.splitext(rasterPath)
+        baseRasterFilePath, rasterFormat = os.path.splitext(rasterPath)
         rasterFormat = rasterFormat.lstrip(".").lower()
         if rasterFormat == "tiff":
             rasterFormat = "tif"
@@ -44,10 +43,12 @@ class ExportGeorefRasterCommand(object):
                 b = -layer.yScale * math.sin(radRotation)
                 d = layer.xScale * -math.sin(radRotation)
                 e = -layer.yScale * math.cos(radRotation)
-                c = layer.center.x() - (a * (originalWidth - 1) / 2 +
-                                        b * (originalHeight - 1) / 2)
-                f = layer.center.y() - (d * (originalWidth - 1) / 2 +
-                                        e * (originalHeight - 1) / 2)
+                c = layer.center.x() - (
+                    a * (originalWidth - 1) / 2 + b * (originalHeight - 1) / 2
+                )
+                f = layer.center.y() - (
+                    d * (originalWidth - 1) / 2 + e * (originalHeight - 1) / 2
+                )
 
             else:
                 # transform the image with rotation and scaling between the
@@ -61,17 +62,20 @@ class ExportGeorefRasterCommand(object):
                 else:
                     # increase y
                     scaleX = 1
-                    scaleY = 1. / ratio
+                    scaleY = 1.0 / ratio
 
-                width = (abs(scaleX * originalWidth * math.cos(radRotation)) +
-                         abs(scaleY * originalHeight * math.sin(radRotation)))
-                height = (abs(scaleX * originalWidth * math.sin(radRotation)) +
-                          abs(scaleY * originalHeight * math.cos(radRotation)))
+                width = abs(scaleX * originalWidth * math.cos(radRotation)) + abs(
+                    scaleY * originalHeight * math.sin(radRotation)
+                )
+                height = abs(scaleX * originalWidth * math.sin(radRotation)) + abs(
+                    scaleY * originalHeight * math.cos(radRotation)
+                )
 
                 qDebug("wh %f,%f" % (width, height))
 
-                img = QImage(QSize(math.ceil(width), math.ceil(height)),
-                             QImage.Format_ARGB32)
+                img = QImage(
+                    QSize(math.ceil(width), math.ceil(height)), QImage.Format_ARGB32
+                )
                 # transparent background
                 img.fill(QColor(0, 0, 0, 0))
 
@@ -79,10 +83,10 @@ class ExportGeorefRasterCommand(object):
                 painter.setRenderHint(QPainter.Antialiasing, True)
                 # painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
-                rect = QRectF(QPointF(-layer.image.width() / 2.0,
-                                      -layer.image.height() / 2.0),
-                              QPointF(layer.image.width() / 2.0,
-                                      layer.image.height() / 2.0))
+                rect = QRectF(
+                    QPointF(-layer.image.width() / 2.0, -layer.image.height() / 2.0),
+                    QPointF(layer.image.width() / 2.0, layer.image.height() / 2.0),
+                )
 
                 painter.translate(QPointF(width / 2.0, height / 2.0))
                 painter.rotate(layer.rotation)
@@ -110,7 +114,7 @@ class ExportGeorefRasterCommand(object):
             else:
                 img.save(rasterPath, rasterFormat)
 
-            worldFilePath = rasterPath[:-3]
+            worldFilePath = baseRasterFilePath + "."
             if rasterFormat == "jpg":
                 worldFilePath += "jgw"
             elif rasterFormat == "png":
@@ -121,25 +125,30 @@ class ExportGeorefRasterCommand(object):
                 worldFilePath += "tfw"
 
             with open(worldFilePath, "w") as writer:
-                writer.write("%.13f\n%.13f\n%.13f\n%.13f\n%.13f\n%.13f" %
-                             (a, b, d, e, c, f))
+                writer.write(
+                    "%.13f\n%.13f\n%.13f\n%.13f\n%.13f\n%.13f" % (a, b, d, e, c, f)
+                )
 
             crsFilePath = rasterPath + ".aux.xml"
             with open(crsFilePath, "w") as writer:
-                writer.write(self.auxContent(
-                    self.iface.mapCanvas().mapSettings().destinationCrs()))
+                writer.write(
+                    self.auxContent(
+                        self.iface.mapCanvas().mapSettings().destinationCrs()
+                    )
+                )
 
             widget = QgsMessageBar.createMessage(
-                "Raster Geoferencer", "Raster exported successfully.")
-            self.iface.messageBar().pushWidget(widget,  Qgis.Info, 2)
+                "Raster Geoferencer", "Raster exported successfully."
+            )
+            self.iface.messageBar().pushWidget(widget, Qgis.Info, 2)
         except Exception as ex:
             QgsMessageLog.logMessage(repr(ex))
             widget = QgsMessageBar.createMessage(
                 "Raster Geoferencer",
                 "There was an error performing this command. "
-                "See QGIS Message log for details.")
-            self.iface.messageBar().pushWidget(
-                widget, Qgis.Critical, 5)
+                "See QGIS Message log for details.",
+            )
+            self.iface.messageBar().pushWidget(widget, Qgis.Critical, 5)
 
     def auxContent(self, crs):
         content = """<PAMDataset>

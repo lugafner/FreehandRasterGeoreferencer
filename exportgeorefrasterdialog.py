@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  *                                                                         *
@@ -17,9 +16,7 @@ from PyQt5.QtWidgets import QDialog, QFileDialog, QMessageBox
 from .ui_exportgeorefrasterdialog import Ui_ExportGeorefRasterDialog
 
 
-class ExportGeorefRasterDialog(QDialog,
-                               Ui_ExportGeorefRasterDialog):
-
+class ExportGeorefRasterDialog(QDialog, Ui_ExportGeorefRasterDialog):
     def __init__(self):
         QDialog.__init__(self)
         self.setupUi(self)
@@ -40,8 +37,11 @@ class ExportGeorefRasterDialog(QDialog,
             filepathDialog = self.defaultPath
 
         filepath, _ = QFileDialog.getSaveFileName(
-            None, "Export georeferenced raster", filepathDialog,
-            "Images (*.png *.bmp *.jpg *.tif *.tiff)")
+            None,
+            "Export georeferenced raster",
+            filepathDialog,
+            "Images (*.png *.bmp *.jpg *.tif *.tiff)",
+        )
 
         if filepath:
             self.lineEditImagePath.setText(filepath)

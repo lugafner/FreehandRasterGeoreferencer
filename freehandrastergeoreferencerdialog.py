@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  *                                                                         *
@@ -19,10 +18,9 @@ from . import utils
 from .ui_freehandrastergeoreferencer import Ui_FreehandRasterGeoreferencer
 
 
-class FreehandRasterGeoreferencerDialog(QDialog,
-                                        Ui_FreehandRasterGeoreferencer):
-    REPLACE=2
-    DUPLICATE=3
+class FreehandRasterGeoreferencerDialog(QDialog, Ui_FreehandRasterGeoreferencer):
+    REPLACE = 2
+    DUPLICATE = 3
 
     def __init__(self):
         QDialog.__init__(self)
@@ -44,23 +42,25 @@ class FreehandRasterGeoreferencerDialog(QDialog,
 
     def showBrowserDialog(self):
         bDir, found = QgsProject.instance().readEntry(
-            utils.SETTINGS_KEY, utils.SETTING_BROWSER_RASTER_DIR, None)
+            utils.SETTINGS_KEY, utils.SETTING_BROWSER_RASTER_DIR, None
+        )
         if not found:
             bDir = os.path.expanduser("~")
 
         filepath, _ = QFileDialog.getOpenFileName(
-            self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif *.tiff *.pdf)")
+            self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif *.tiff *.pdf)"
+        )
 
         if filepath:
             self.lineEditImagePath.setText(filepath)
             bDir, _ = os.path.split(filepath)
-            QgsProject.instance().writeEntry(utils.SETTINGS_KEY,
-                                             utils.SETTING_BROWSER_RASTER_DIR,
-                                             bDir)
+            QgsProject.instance().writeEntry(
+                utils.SETTINGS_KEY, utils.SETTING_BROWSER_RASTER_DIR, bDir
+            )
 
     def configureAdvancedMenu(self):
-        action1 = QAction('Replace image for selected layer', self)
-        action2 = QAction('Duplicate selected layer', self)
+        action1 = QAction("Replace image for selected layer", self)
+        action2 = QAction("Duplicate selected layer", self)
 
         action1.triggered.connect(self.replaceImage)
         action2.triggered.connect(self.duplicateLayer)
@@ -107,8 +107,9 @@ class FreehandRasterGeoreferencerDialog(QDialog,
         self.imagePath = self.lineEditImagePath.text()
         _, extension = os.path.splitext(self.imagePath)
         extension = extension.lower()
-        if not os.path.isfile(self.imagePath) or \
-                (extension not in [".jpg", ".bmp", ".png", ".tif", ".tiff", ".pdf"]):
+        if not os.path.isfile(self.imagePath) or (
+            extension not in [".jpg", ".bmp", ".png", ".tif", ".tiff", ".pdf"]
+        ):
             result = False
             if len(details) > 0:
                 details += "\n"

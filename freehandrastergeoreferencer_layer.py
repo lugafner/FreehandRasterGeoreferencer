@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  *                                                                         *
@@ -14,12 +13,10 @@ import math
 import os
 
 from osgeo import gdal
-
 from PyQt5.QtCore import (
     pyqtSignal,
     qDebug,
     QFileInfo,
-    QPoint,
     QPointF,
     QRectF,
     QSettings,
@@ -58,7 +55,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
     def __init__(self, plugin, filepath, title, screenExtent):
         QgsPluginLayer.__init__(
-            self, FreehandRasterGeoreferencerLayer.LAYER_TYPE, title)
+            self, FreehandRasterGeoreferencerLayer.LAYER_TYPE, title
+        )
         self.plugin = plugin
         self.iface = plugin.iface
 
@@ -119,11 +117,11 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.setCustomProperty("xCenter", self.center.x())
         self.setCustomProperty("yCenter", self.center.y())
         self.transformParametersChanged.emit(
-            (self.xScale, self.yScale, self.rotation, self.center))
+            (self.xScale, self.yScale, self.rotation, self.center)
+        )
 
     def reprojectTransformParameters(self, oldCrs, newCrs):
-        transform = QgsCoordinateTransform(oldCrs, newCrs,
-                                           QgsProject.instance())
+        transform = QgsCoordinateTransform(oldCrs, newCrs, QgsProject.instance())
 
         newCenter = transform.transform(self.center)
         newExtent = transform.transform(self.extent())
@@ -153,19 +151,19 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
             if layerId in layerIds:
                 try:
                     self.iface.mapCanvas().destinationCrsChanged.disconnect(
-                        self.resetTransformParametersToNewCrs)
+                        self.resetTransformParametersToNewCrs
+                    )
                 except Exception:
                     pass
                 try:
-                    QgsProject.instance().disconnect(
-                        removeCrsChangeHandler)
+                    QgsProject.instance().disconnect(removeCrsChangeHandler)
                 except Exception:
                     pass
 
         self.iface.mapCanvas().destinationCrsChanged.connect(
-            self.resetTransformParametersToNewCrs)
-        QgsProject.instance().layersRemoved.connect(
-            removeCrsChangeHandler)
+            self.resetTransformParametersToNewCrs
+        )
+        QgsProject.instance().layersRemoved.connect(removeCrsChangeHandler)
 
     def setupCrs(self):
         mapCrs = self.iface.mapCanvas().mapSettings().destinationCrs()
@@ -209,11 +207,13 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
             if ext == "pdf":
                 s = QSettings()
                 oldValidation = s.value("/Projections/defaultBehavior")
-                s.setValue("/Projections/defaultBehavior", "useGlobal") # for not asking about crs
+                s.setValue(
+                    "/Projections/defaultBehavior", "useGlobal"
+                )  # for not asking about crs
                 path = fileInfo.filePath()
                 baseName = fileInfo.baseName()
                 layer = QgsRasterLayer(path, baseName)
-                self.image = layer.previewAsImage(QSize(layer.width(),layer.height()))
+                self.image = layer.previewAsImage(QSize(layer.width(), layer.height()))
                 s.setValue("/Projections/defaultBehavior", oldValidation)
             else:
                 reader = QImageReader(filepath)
@@ -256,13 +256,12 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         sy = math.sqrt(georef[2] ** 2 + georef[5] ** 2)
         i_center_x = self.image.width() / 2
         i_center_y = self.image.height() / 2
-        center = QgsPointXY(georef[0] + georef[1] * i_center_x +
-                            georef[2] * i_center_y,
-                            georef[3] + georef[4] * i_center_x +
-                            georef[5] * i_center_y)
+        center = QgsPointXY(
+            georef[0] + georef[1] * i_center_x + georef[2] * i_center_y,
+            georef[3] + georef[4] * i_center_x + georef[5] * i_center_y,
+        )
 
-        qDebug(repr(rotation) + " " + repr((sx, sy)) + " " +
-               repr(center))
+        qDebug(repr(rotation) + " " + repr((sx, sy)) + " " + repr(center))
 
         self.setRotation(rotation)
         self.setCenter(center)
@@ -285,7 +284,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                         "its CRS does not match the CRS of the map. "
                         "Reprojected the extent.",
                         Qgis.Warning,
-                        5)
+                        5,
+                    )
                     message_shown = True
                 except Exception as ex:
                     QgsMessageLog.logMessage(repr(ex))
@@ -295,7 +295,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                         "its CRS does not match the CRS of the map. "
                         "Unable to reproject.",
                         Qgis.Warning,
-                        5)
+                        5,
+                    )
                     message_shown = True
         # if no projection info, assume it is the same CRS
         # as the map and no warning
@@ -304,7 +305,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                 "Georeferencing loaded",
                 "Found existing georeferencing in raster",
                 Qgis.Info,
-                3)
+                3,
+            )
 
         # zoom (assume the user wants to work on the image)
         self.iface.mapCanvas().setExtent(self.extent())
@@ -314,8 +316,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         Check if there is really a transform or if it is just the default
         made up by GDAL
         """
-        return (georef[0] == 0 and georef[3] == 0 and georef[1] == 1 and
-                georef[5] == 1)
+        return georef[0] == 0 and georef[3] == 0 and georef[1] == 1 and georef[5] == 1
 
     def resetScale(self, sw, sh):
         iw = self.image.width()
@@ -344,7 +345,9 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         if ext == "pdf":
             s = QSettings()
             oldValidation = s.value("/Projections/defaultBehavior")
-            s.setValue("/Projections/defaultBehavior", "useGlobal")  # for not asking about crs
+            s.setValue(
+                "/Projections/defaultBehavior", "useGlobal"
+            )  # for not asking about crs
             path = fileInfo.filePath()
             baseName = fileInfo.baseName()
             layer = QgsRasterLayer(path, baseName)
@@ -356,7 +359,9 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.repaint()
 
     def clone(self):
-        layer = FreehandRasterGeoreferencerLayer(self.plugin, self.filepath, self.title, self.screenExtent)
+        layer = FreehandRasterGeoreferencerLayer(
+            self.plugin, self.filepath, self.title, self.screenExtent
+        )
         layer.center = self.center
         layer.rotation = self.rotation
         layer.xScale = self.xScale
@@ -389,29 +394,31 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         left = min(topLeft.x(), topRight.x(), bottomRight.x(), bottomLeft.x())
         right = max(topLeft.x(), topRight.x(), bottomRight.x(), bottomLeft.x())
         top = max(topLeft.y(), topRight.y(), bottomRight.y(), bottomLeft.y())
-        bottom = min(topLeft.y(), topRight.y(),
-                     bottomRight.y(), bottomLeft.y())
+        bottom = min(topLeft.y(), topRight.y(), bottomRight.y(), bottomLeft.y())
 
         # recenter + create rectangle
         self._extent = QgsRectangle(left, bottom, right, top)
         return self._extent
 
     def cornerCoordinates(self):
-        return self.transformedCornerCoordinates(self.center,
-                                                 self.rotation,
-                                                 self.xScale,
-                                                 self.yScale)
+        return self.transformedCornerCoordinates(
+            self.center, self.rotation, self.xScale, self.yScale
+        )
 
     def transformedCornerCoordinates(self, center, rotation, xScale, yScale):
         # scale
-        topLeft = QgsPointXY(-self.image.width() / 2.0 * xScale,
-                             self.image.height() / 2.0 * yScale)
-        topRight = QgsPointXY(self.image.width() / 2.0 * xScale,
-                              self.image.height() / 2.0 * yScale)
-        bottomLeft = QgsPointXY(-self.image.width() / 2.0 * xScale,
-                                - self.image.height() / 2.0 * yScale)
-        bottomRight = QgsPointXY(self.image.width() / 2.0 * xScale,
-                                 - self.image.height() / 2.0 * yScale)
+        topLeft = QgsPointXY(
+            -self.image.width() / 2.0 * xScale, self.image.height() / 2.0 * yScale
+        )
+        topRight = QgsPointXY(
+            self.image.width() / 2.0 * xScale, self.image.height() / 2.0 * yScale
+        )
+        bottomLeft = QgsPointXY(
+            -self.image.width() / 2.0 * xScale, -self.image.height() / 2.0 * yScale
+        )
+        bottomRight = QgsPointXY(
+            self.image.width() / 2.0 * xScale, -self.image.height() / 2.0 * yScale
+        )
 
         # rotate
         # minus sign because rotation is CW in this class and Qt)
@@ -426,15 +433,14 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
         topLeft.set(topLeft.x() + center.x(), topLeft.y() + center.y())
         topRight.set(topRight.x() + center.x(), topRight.y() + center.y())
-        bottomRight.set(bottomRight.x() + center.x(),
-                        bottomRight.y() + center.y())
-        bottomLeft.set(bottomLeft.x() + center.x(),
-                       bottomLeft.y() + center.y())
+        bottomRight.set(bottomRight.x() + center.x(), bottomRight.y() + center.y())
+        bottomLeft.set(bottomLeft.x() + center.x(), bottomLeft.y() + center.y())
 
         return (topLeft, topRight, bottomRight, bottomLeft)
 
-    def transformedCornerCoordinatesFromPoint(self, startPoint, rotation,
-                                              xScale, yScale):
+    def transformedCornerCoordinatesFromPoint(
+        self, startPoint, rotation, xScale, yScale
+    ):
         # startPoint is a fixed point for this new movement (rotation and
         # scale)
         # rotation is the global rotation of the image
@@ -486,14 +492,18 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
     def moveCenterFromPointRotate(self, startPoint, rotation, xScale, yScale):
         cornerPoints = self.transformedCornerCoordinatesFromPoint(
-            startPoint, rotation, xScale, yScale)
-        self.center = QgsPointXY((cornerPoints[0].x(
-        ) + cornerPoints[2].x()) / 2, (cornerPoints[0].y() +
-                                       cornerPoints[2].y()) / 2)
+            startPoint, rotation, xScale, yScale
+        )
+        self.center = QgsPointXY(
+            (cornerPoints[0].x() + cornerPoints[2].x()) / 2,
+            (cornerPoints[0].y() + cornerPoints[2].y()) / 2,
+        )
 
     def _rotate(self, point, cosRot, sinRot):
-        return QgsPointXY(point.x() * cosRot - point.y() * sinRot,
-                          point.x() * sinRot + point.y() * cosRot)
+        return QgsPointXY(
+            point.x() * cosRot - point.y() * sinRot,
+            point.x() * sinRot + point.y() * cosRot,
+        )
 
     def createMapRenderer(self, rendererContext):
         return FreehandRasterGeoreferencerLayerRenderer(self, rendererContext)
@@ -535,10 +545,10 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         scaleX = self.xScale / self.map2pixel.mapUnitsPerPixel()
         scaleY = self.yScale / self.map2pixel.mapUnitsPerPixel()
 
-        rect = QRectF(QPointF(-self.image.width() / 2.0,
-                              - self.image.height() / 2.0),
-                      QPointF(self.image.width() / 2.0,
-                              self.image.height() / 2.0))
+        rect = QRectF(
+            QPointF(-self.image.width() / 2.0, -self.image.height() / 2.0),
+            QPointF(self.image.width() / 2.0, self.image.height() / 2.0),
+        )
         mapCenter = self.map2pixel.transform(self.center)
 
         # draw the image on the map canvas
@@ -564,18 +574,19 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         xCenter = float(self.customProperty("xCenter", 0.0))
         yCenter = float(self.customProperty("yCenter", 0.0))
         self.center = QgsPointXY(xCenter, yCenter)
-        self.setTransparency(int(self.customProperty(
-            "transparency", LayerDefaultSettings.TRANSPARENCY)))
-        self.setBlendModeByName(self.customProperty(
-            "blendMode", LayerDefaultSettings.BLEND_MODE))
+        self.setTransparency(
+            int(self.customProperty("transparency", LayerDefaultSettings.TRANSPARENCY))
+        )
+        self.setBlendModeByName(
+            self.customProperty("blendMode", LayerDefaultSettings.BLEND_MODE)
+        )
         return True
 
     def writeXml(self, node, doc, context):
         element = node.toElement()
         self.writeCustomProperties(node, doc)
         element.setAttribute("type", "plugin")
-        element.setAttribute(
-            "name", FreehandRasterGeoreferencerLayer.LAYER_TYPE)
+        element.setAttribute("name", FreehandRasterGeoreferencerLayer.LAYER_TYPE)
         return True
 
     def metadata(self):
@@ -618,8 +629,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
 class FreehandRasterGeoreferencerLayerType(QgsPluginLayerType):
     def __init__(self, plugin):
-        QgsPluginLayerType.__init__(
-            self, FreehandRasterGeoreferencerLayer.LAYER_TYPE)
+        QgsPluginLayerType.__init__(self, FreehandRasterGeoreferencerLayer.LAYER_TYPE)
         self.plugin = plugin
 
     def createLayer(self):
@@ -627,25 +637,25 @@ class FreehandRasterGeoreferencerLayerType(QgsPluginLayerType):
 
     def showLayerProperties(self, layer):
         from .propertiesdialog import PropertiesDialog
+
         dialog = PropertiesDialog(layer)
         dialog.horizontalSlider_Transparency.valueChanged.connect(
-            layer.transparencyChanged)
-        dialog.spinBox_Transparency.valueChanged.connect(
-            layer.transparencyChanged)
+            layer.transparencyChanged
+        )
+        dialog.spinBox_Transparency.valueChanged.connect(layer.transparencyChanged)
 
         dialog.exec_()
 
         dialog.horizontalSlider_Transparency.valueChanged.disconnect(
-            layer.transparencyChanged)
-        dialog.spinBox_Transparency.valueChanged.disconnect(
-            layer.transparencyChanged)
+            layer.transparencyChanged
+        )
+        dialog.spinBox_Transparency.valueChanged.disconnect(layer.transparencyChanged)
         return True
 
 
 class FreehandRasterGeoreferencerLayerProvider(QgsDataProvider):
     def __init__(self, layer):
-        QgsDataProvider.__init__(
-            self, "dummyURI")
+        QgsDataProvider.__init__(self, "dummyURI")
 
     def name(self):
         # doesn't matter
@@ -659,8 +669,7 @@ class FreehandRasterGeoreferencerLayerRenderer(QgsMapLayerRenderer):
     """
 
     def __init__(self, layer, rendererContext):
-        QgsMapLayerRenderer.__init__(
-            self, layer.id())
+        QgsMapLayerRenderer.__init__(self, layer.id())
         self.layer = layer
         self.rendererContext = rendererContext
 
