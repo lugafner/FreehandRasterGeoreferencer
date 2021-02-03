@@ -153,7 +153,7 @@ class FreehandRasterGeoreferencer(object):
         )
 
         self.spinBoxRotate = QDoubleSpinBox(self.iface.mainWindow())
-        self.spinBoxRotate.setDecimals(1)
+        self.spinBoxRotate.setDecimals(3)
         self.spinBoxRotate.setMinimum(-180)
         self.spinBoxRotate.setMaximum(180)
         self.spinBoxRotate.setSingleStep(0.1)

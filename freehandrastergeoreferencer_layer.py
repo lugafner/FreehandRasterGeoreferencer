@@ -97,7 +97,8 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         self.yScale = yScale
 
     def setRotation(self, rotation):
-        rotation = round(rotation, 1)
+        # 3 decimals ought to be enough for everybody
+        rotation = round(rotation, 3)
         # keep in -180,180 interval
         if rotation < -180:
             rotation += 360
