@@ -13,11 +13,11 @@
 import os.path
 
 from PyQt5.QtCore import qDebug, Qt
-from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
 from qgis.core import QgsProject
 
-from .ui_loaderrordialog import Ui_LoadError
 from . import utils
+from .ui_loaderrordialog import Ui_LoadError
 
 
 class LoadErrorDialog(QDialog, Ui_LoadError):
@@ -45,7 +45,7 @@ class LoadErrorDialog(QDialog, Ui_LoadError):
 
         qDebug(bDir.encode())
         filepath, _ = QFileDialog.getOpenFileName(
-            self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif *.pdf)")
+            self, "Select image", bDir, "Images (*.png *.bmp *.jpg *.tif *.tiff *.pdf)")
         self.lineEditImagePath.setText(filepath)
 
         if filepath:
@@ -79,7 +79,7 @@ class LoadErrorDialog(QDialog, Ui_LoadError):
         _, extension = os.path.splitext(self.imagePath)
         extension = extension.lower()
         if not os.path.isfile(self.imagePath) or \
-                (extension not in [".jpg", ".bmp", ".png", ".tif" ".pdf"]):
+                (extension not in [".jpg", ".bmp", ".png", ".tif", ".tiff", ".pdf"]):
             result = False
             if len(details) > 0:
                 details += '\n'

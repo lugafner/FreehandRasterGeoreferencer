@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  *                                                                         *
@@ -11,6 +10,7 @@
 """
 
 import math
+import os
 
 from PyQt5.QtCore import qDebug, QPointF, QRectF, QSize
 from PyQt5.QtGui import QColor, QImage, QImageWriter, QPainter
@@ -24,7 +24,10 @@ class ExportGeorefRasterCommand(object):
         self.iface = iface
 
     def exportGeorefRaster(self, layer, rasterPath, isPutRotationInWorldFile):
-        rasterFormat = rasterPath[-3:].lower()
+        _, rasterFormat = os.path.splitext(rasterPath)
+        rasterFormat = rasterFormat.lstrip(".").lower()
+        if rasterFormat == "tiff":
+            rasterFormat = "tif"
 
         try:
             originalWidth = layer.image.width()
