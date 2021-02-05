@@ -7,6 +7,8 @@ resources_rc.py
 *.pydevproject
 *.settings
 fhrgr.zip
+__pycache__
 .vscode
 .env
 .python-version
+test_data

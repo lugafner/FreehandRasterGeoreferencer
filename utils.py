@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  *                                                                         *
@@ -14,7 +13,6 @@ import os.path
 
 from PyQt5.QtCore import qDebug
 from qgis.core import QgsProject
-
 
 # constants for saving data inside QGS
 SETTINGS_KEY = "FreehandRasterGeoreferencer"

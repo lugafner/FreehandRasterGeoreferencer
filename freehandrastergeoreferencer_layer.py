@@ -23,7 +23,7 @@ from PyQt5.QtCore import (
     QSize,
     Qt,
 )
-from PyQt5.QtGui import QColor, QImageReader, QPainter
+from PyQt5.QtGui import QColor, QImage, QImageReader, QPainter
 from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
@@ -39,7 +39,7 @@ from qgis.core import (
     QgsRectangle,
 )
 
-from . import utils
+from . import gdal_utils, utils
 from .loaderrordialog import LoadErrorDialog
 
 
@@ -218,7 +218,18 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                 s.setValue("/Projections/defaultBehavior", oldValidation)
             else:
                 reader = QImageReader(filepath)
-                self.image = reader.read()
+                has_corrected = self.preCheckImage()
+                if has_corrected:
+                    self.showBarMessage(
+                        "Raster changed",
+                        "Raster content has been transformed for display in the "
+                        "plugin. "
+                        "When exporting, select the 'Only export world file' checkbox.",
+                        Qgis.Warning,
+                        10,
+                    )
+                else:
+                    self.image = reader.read()
 
             self.initialized = True
             self.initializing = False
@@ -249,6 +260,21 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                     self.resetScale(sw, sh)
 
                     self.commitTransformParameters()
+
+    def preCheckImage(self):
+        # For now for 1 band image
+        # TODO check with more than 1 band
+
+        bands, datatype, width, height = gdal_utils.format(self.filepath)
+        if bands == 1 and datatype != "Byte":
+            # grayscale 8bit
+            pixels = gdal_utils.byte_pixels_band1(self.filepath)
+            bytesPerLine = width
+            qImg = QImage(pixels, width, height, bytesPerLine, QImage.Format_Grayscale8)
+            self.image = qImg
+
+            return True
+        return False
 
     def initializeExistingGeoreferencing(self, dataset, georef):
         # georef can have scaling, rotation or translation
@@ -558,6 +584,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         painter.scale(scaleX, scaleY)
         painter.drawImage(rect, self.image)
 
+        painter.setOpacity(1.0)
         painter.setBrush(Qt.NoBrush)
         painter.setPen(QColor(0, 0, 0))
         painter.drawRect(rect)
