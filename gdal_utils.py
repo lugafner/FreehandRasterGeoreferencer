@@ -15,17 +15,17 @@ def format(filepath):
     return bands, bandtype, cols, rows
 
 
-def byte_pixels_band1(filepath):
+def pixels(filepath):
     dataset = gdal.Open(filepath, gdal.GA_ReadOnly)
     cols = dataset.RasterXSize
     rows = dataset.RasterYSize
+    data = dataset.ReadAsArray(0, 0, cols, rows)
+    return data
 
-    # to grayscale 8
-    band = dataset.GetRasterBand(1)
-    data = band.ReadAsArray(0, 0, cols, rows)
+
+def to_byte(data):
     min_ = np.min(data)
     max_ = np.max(data)
-    data = band.ReadAsArray(0, 0, cols, rows)
-    data = (255 - 0) * ((data - min_) / (max_ - min_))
+    data = 255 * (data - min_) / (max_ - min_)
     data = data.astype(np.uint8)
     return data

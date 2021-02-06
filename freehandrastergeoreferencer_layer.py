@@ -12,6 +12,7 @@
 import math
 import os
 
+import numpy as np
 from osgeo import gdal
 from PyQt5.QtCore import (
     pyqtSignal,
@@ -262,18 +263,46 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                     self.commitTransformParameters()
 
     def preCheckImage(self):
-        # For now for 1 band image
-        # TODO check with more than 1 band
+        nbands, datatype, width, height = gdal_utils.format(self.filepath)
 
-        bands, datatype, width, height = gdal_utils.format(self.filepath)
-        if bands == 1 and datatype != "Byte":
-            # grayscale 8bit
-            pixels = gdal_utils.byte_pixels_band1(self.filepath)
-            bytesPerLine = width
-            qImg = QImage(pixels, width, height, bytesPerLine, QImage.Format_Grayscale8)
+        pixels = None
+        if nbands not in (1, 3):
+            pixels = gdal_utils.pixels(self.filepath)
+            if nbands > 3:
+                # first 3
+                pixels = pixels[:3]
+                nbands = 3
+
+            if nbands == 2:
+                # recopy band 2
+                pixels = np.vstack(pixels, pixels[1])
+                nbands = 3
+
+        if datatype != "Byte":
+            pixels = pixels if pixels is not None else gdal_utils.pixels(self.filepath)
+
+            bands = np.empty(np.shape(pixels))
+            for i in range(nbands):
+                band_pixels = pixels[i]
+                bands[i] = gdal_utils.to_byte(band_pixels)
+            pixels = bands
+
+        if pixels is not None:
+            # some transformation done
+
+            if nbands == 1:
+                # monochrome
+                format = QImage.Format_Grayscale8
+            else:
+                format = QImage.Format_RGB888
+
+            # Byte
+            bytesPerLine = width * np.shape(pixels)[0]
+            qImg = QImage(pixels, width, height, bytesPerLine, format)
             self.image = qImg
 
             return True
+
         return False
 
     def initializeExistingGeoreferencing(self, dataset, georef):
