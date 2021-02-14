@@ -22,7 +22,9 @@ class ExportGeorefRasterCommand(object):
     def __init__(self, iface):
         self.iface = iface
 
-    def exportGeorefRaster(self, layer, rasterPath, isPutRotationInWorldFile):
+    def exportGeorefRaster(
+        self, layer, rasterPath, isPutRotationInWorldFile, isExportOnlyWorldFile
+    ):
         baseRasterFilePath, rasterFormat = os.path.splitext(rasterPath)
         rasterFormat = rasterFormat.lstrip(".").lower()
         if rasterFormat == "tiff":
@@ -33,7 +35,7 @@ class ExportGeorefRasterCommand(object):
             originalHeight = layer.image.height()
             radRotation = layer.rotation * math.pi / 180
 
-            if isPutRotationInWorldFile:
+            if isPutRotationInWorldFile or isExportOnlyWorldFile:
                 # keep the image as is and put all transformation params
                 # in world file
                 img = layer.image
@@ -103,16 +105,18 @@ class ExportGeorefRasterCommand(object):
                 f = extent.yMaximum() + e / 2
                 b = d = 0.0
 
-            if rasterFormat == "tif":
-                writer = QImageWriter()
-                # use LZW compression for tiff
-                # useful for scanned documents (mostly white)
-                writer.setCompression(1)
-                writer.setFormat(b"TIFF")
-                writer.setFileName(rasterPath)
-                writer.write(img)
-            else:
-                img.save(rasterPath, rasterFormat)
+            if not isExportOnlyWorldFile:
+                # export image
+                if rasterFormat == "tif":
+                    writer = QImageWriter()
+                    # use LZW compression for tiff
+                    # useful for scanned documents (mostly white)
+                    writer.setCompression(1)
+                    writer.setFormat(b"TIFF")
+                    writer.setFileName(rasterPath)
+                    writer.write(img)
+                else:
+                    img.save(rasterPath, rasterFormat)
 
             worldFilePath = baseRasterFilePath + "."
             if rasterFormat == "jpg":
@@ -125,8 +129,13 @@ class ExportGeorefRasterCommand(object):
                 worldFilePath += "tfw"
 
             with open(worldFilePath, "w") as writer:
+                # order is as described at
+                # http://webhelp.esri.com/arcims/9.3/General/topics/author_world_files.htm
+                # TODO changed since original version of this code
+                # TODO d b reversed; abdecf used to work I think; change in GDAL ?
+                # TODO or bug here ?
                 writer.write(
-                    "%.13f\n%.13f\n%.13f\n%.13f\n%.13f\n%.13f" % (a, b, d, e, c, f)
+                    "%.13f\n%.13f\n%.13f\n%.13f\n%.13f\n%.13f" % (a, d, b, e, c, f)
                 )
 
             crsFilePath = rasterPath + ".aux.xml"

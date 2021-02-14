@@ -371,6 +371,7 @@ class FreehandRasterGeoreferencer(object):
                 layer,
                 self.dialogExportGeorefRaster.imagePath,
                 self.dialogExportGeorefRaster.isPutRotationInWorldFile,
+                self.dialogExportGeorefRaster.isExportOnlyWorldFile,
             )
 
     def spinBoxRotateUpdate(self, newParameters):

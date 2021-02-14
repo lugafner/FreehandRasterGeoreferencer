@@ -22,13 +22,30 @@ class ExportGeorefRasterDialog(QDialog, Ui_ExportGeorefRasterDialog):
         self.setupUi(self)
 
         self.pushButtonBrowse.clicked.connect(self.showBrowserDialog)
+        self.checkBoxOnlyWorldFile.stateChanged.connect(self.setupOnlyWorldFile)
 
     def clear(self, layer):
         self.lineEditImagePath.setText("")
         self.checkBoxRotationMode.setChecked(False)
+        self.checkBoxRotationMode.setEnabled(True)
+        self.checkBoxOnlyWorldFile.setChecked(False)
 
         defaultPath, _ = os.path.splitext(layer.filepath)
         self.defaultPath = defaultPath + "_georeferenced.png"
+
+    def setupOnlyWorldFile(self):
+        if self.checkBoxOnlyWorldFile.isChecked():
+            self._originalCheckBoxRotationModeChecked = (
+                self.checkBoxRotationMode.isChecked()
+            )
+            self.checkBoxRotationMode.setChecked(True)
+            self.checkBoxRotationMode.setEnabled(False)
+
+        else:
+            self.checkBoxRotationMode.setChecked(
+                self._originalCheckBoxRotationModeChecked
+            )
+            self.checkBoxRotationMode.setEnabled(True)
 
     def showBrowserDialog(self):
         if self.lineEditImagePath.text():
@@ -36,12 +53,20 @@ class ExportGeorefRasterDialog(QDialog, Ui_ExportGeorefRasterDialog):
         else:
             filepathDialog = self.defaultPath
 
-        filepath, _ = QFileDialog.getSaveFileName(
-            None,
-            "Export georeferenced raster",
-            filepathDialog,
-            "Images (*.png *.bmp *.jpg *.tif *.tiff)",
-        )
+        if not self.checkBoxOnlyWorldFile.isChecked():
+            filepath, _ = QFileDialog.getSaveFileName(
+                None,
+                "Export georeferenced raster",
+                filepathDialog,
+                "Images (*.png *.bmp *.jpg *.tif *.tiff)",
+            )
+        else:
+            filepath, _ = QFileDialog.getOpenFileName(
+                None,
+                "Export world file for raster",
+                filepathDialog,
+                "Images (*.png *.bmp *.jpg *.tif *.tiff)",
+            )
 
         if filepath:
             self.lineEditImagePath.setText(filepath)
@@ -64,6 +89,7 @@ class ExportGeorefRasterDialog(QDialog, Ui_ExportGeorefRasterDialog):
         details = ""
 
         self.isPutRotationInWorldFile = self.checkBoxRotationMode.isChecked()
+        self.isExportOnlyWorldFile = self.checkBoxOnlyWorldFile.isChecked()
 
         self.imagePath = self.lineEditImagePath.text()
         if not self.imagePath:
