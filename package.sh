@@ -1,4 +1,5 @@
+set -x
+
 rm -f fhrgr.zip
-cd ..
-zip -r FreehandRasterGeoreferencer/fhrgr.zip FreehandRasterGeoreferencer -x ".*" -x "*/.*" -x "*.pyc" -x "*/__pycache__/*" -x "*.sh" -x "*.bat"
-cd FreehandRasterGeoreferencer
+rsync -a . FreehandRasterGeoreferencer --exclude "FreehandRasterGeoreferencer" --exclude ".*"  --exclude "*.pyc"  --exclude "**/__pycache__"  --exclude "*.sh"  --exclude "*.bat"  --exclude "azure-pipelines.yml"
+zip -r fhrgr.zip FreehandRasterGeoreferencer

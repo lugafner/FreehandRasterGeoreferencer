@@ -1,0 +1,21 @@
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-20.04
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.7'
+    addToPath: true
+    architecture: 'x64'
+
+- script: |
+    pip install pyqt5
+    bash build.sh
+    bash package.sh
+  displayName: 'Build ZIP'
+
+- publish: $(System.DefaultWorkingDirectory)/fhrgr.zip
+  artifact: PluginArchive
