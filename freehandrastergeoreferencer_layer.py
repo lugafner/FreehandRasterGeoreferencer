@@ -278,9 +278,9 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                 nbands = 3
 
             if nbands == 2:
-                # recopy band 2
-                pixels = np.vstack(pixels, pixels[1])
-                nbands = 3
+                # remove band 2
+                pixels = pixels[0][np.newaxis, ...]
+                nbands = 1
 
         if datatype != "Byte":
             pixels = pixels if pixels is not None else gdal_utils.pixels(self.filepath)

@@ -3,7 +3,7 @@ name = Freehand raster georeferencer
 qgisMinimumVersion=3.0
 description = Interactive georeferencing of rasters
 about = Tools to georeference a raster interactively (move, rotate, scale, export...)
-version = 0.8.1
+version = 0.8.2
 author = Guilhem Vellut
 email = g@vellut.com
 tags = raster,georeferencing
@@ -15,7 +15,7 @@ experimental = False
 deprecated = False
 category = Raster
 changelog = 
-    0.8.1
+    0.8.2
         * Disable pixel transformation for formats other than TIFF
     0.8.0
         * FIX #32 Correct issue with the toggling of map tools
