@@ -281,11 +281,13 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         if datatype != "Byte":
             pixels = pixels if pixels is not None else gdal_utils.pixels(self.filepath)
 
-            bands = np.empty(np.shape(pixels))
+            bands = np.empty(np.shape(pixels), dtype=np.uint8)
             for i in range(nbands):
                 band_pixels = pixels[i]
                 bands[i] = gdal_utils.to_byte(band_pixels)
-            pixels = bands
+            # band at the end
+            pixels = np.transpose(bands, [1, 2, 0])
+            pixels = pixels.ravel()
 
         if pixels is not None:
             # some transformation done
@@ -293,11 +295,12 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
             if nbands == 1:
                 # monochrome
                 format = QImage.Format_Grayscale8
+                bytesPerLine = width
             else:
                 format = QImage.Format_RGB888
+                bytesPerLine = 3 * width
 
             # Byte
-            bytesPerLine = width * np.shape(pixels)[0]
             qImg = QImage(pixels, width, height, bytesPerLine, format)
             self.image = qImg
 
@@ -594,7 +597,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
     def drawRaster(self, renderContext):
         painter = renderContext.painter()
-        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        # painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
         self.map2pixel = renderContext.mapToPixel()
 

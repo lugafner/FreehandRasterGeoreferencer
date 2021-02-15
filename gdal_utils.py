@@ -20,12 +20,15 @@ def pixels(filepath):
     cols = dataset.RasterXSize
     rows = dataset.RasterYSize
     data = dataset.ReadAsArray(0, 0, cols, rows)
+    if len(data.shape) == 2:
+        # monoband
+        data = data.reshape((1, *data.shape))
     return data
 
 
 def to_byte(data):
     min_ = np.min(data)
     max_ = np.max(data)
-    data = 255 * (data - min_) / (max_ - min_)
+    data = 255.0 * (data - min_) / (max_ - min_)
     data = data.astype(np.uint8)
     return data
