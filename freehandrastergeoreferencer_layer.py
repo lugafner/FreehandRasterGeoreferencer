@@ -24,7 +24,7 @@ from PyQt5.QtCore import (
     QSize,
     Qt,
 )
-from PyQt5.QtGui import QColor, QImage, QImageReader, QPainter
+from PyQt5.QtGui import QColor, QImage, QImageReader, QPainter, QPen
 from qgis.core import (
     Qgis,
     QgsCoordinateReferenceSystem,
@@ -615,7 +615,11 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
         painter.setOpacity(1.0)
         painter.setBrush(Qt.NoBrush)
-        painter.setPen(QColor(0, 0, 0))
+        pen = QPen()
+        pen.setColor(QColor(0, 0, 0))
+        pen.setWidth(3)
+        pen.setCosmetic(True)
+        painter.setPen(pen)
         painter.drawRect(rect)
 
     def prepareStyle(self, painter):
