@@ -280,9 +280,7 @@ class FreehandRasterGeoreferencer(object):
             if self.currentTool:
                 self.currentTool.reset()
                 self.currentTool.setLayer(None)
-                self.iface.mapCanvas().unsetMapTool(self.currentTool)
-                self.iface.actionPan().trigger()
-                self.currentTool = None
+                self._uncheckCurrentTool()
 
     def addLayer(self):
         self.dialogAddLayer.clear(self.layer)
@@ -318,35 +316,37 @@ class FreehandRasterGeoreferencer(object):
             self.layers[layer.id()] = layer
             self.iface.setActiveLayer(layer)
 
+    def _toggleTool(self, tool):
+        if self.currentTool is tool:
+            # Toggle
+            self._uncheckCurrentTool()
+        else:
+            self.currentTool = tool
+            layer = self.iface.activeLayer()
+            tool.setLayer(layer)
+            self.iface.mapCanvas().setMapTool(tool)
+
+    def _uncheckCurrentTool(self):
+        # Toggle
+        self.iface.mapCanvas().unsetMapTool(self.currentTool)
+        # replace tool with Pan
+        self.iface.actionPan().trigger()
+        self.currentTool = None
+
     def moveRaster(self):
-        self.currentTool = self.moveTool
-        layer = self.iface.activeLayer()
-        self.moveTool.setLayer(layer)
-        self.iface.mapCanvas().setMapTool(self.moveTool)
+        self._toggleTool(self.moveTool)
 
     def rotateRaster(self):
-        self.currentTool = self.rotateTool
-        layer = self.iface.activeLayer()
-        self.rotateTool.setLayer(layer)
-        self.iface.mapCanvas().setMapTool(self.rotateTool)
+        self._toggleTool(self.rotateTool)
 
     def scaleRaster(self):
-        self.currentTool = self.scaleTool
-        layer = self.iface.activeLayer()
-        self.scaleTool.setLayer(layer)
-        self.iface.mapCanvas().setMapTool(self.scaleTool)
+        self._toggleTool(self.scaleTool)
 
     def adjustRaster(self):
-        self.currentTool = self.adjustTool
-        layer = self.iface.activeLayer()
-        self.adjustTool.setLayer(layer)
-        self.iface.mapCanvas().setMapTool(self.adjustTool)
+        self._toggleTool(self.adjustTool)
 
     def georef2PRaster(self):
-        self.currentTool = self.georef2PTool
-        layer = self.iface.activeLayer()
-        self.georef2PTool.setLayer(layer)
-        self.iface.mapCanvas().setMapTool(self.georef2PTool)
+        self._toggleTool(self.georef2PTool)
 
     def increaseTransparency(self):
         layer = self.iface.activeLayer()
