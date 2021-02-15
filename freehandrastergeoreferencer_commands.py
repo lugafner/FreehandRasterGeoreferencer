@@ -17,6 +17,8 @@ from PyQt5.QtGui import QColor, QImage, QImageWriter, QPainter
 from qgis.core import Qgis, QgsMessageLog
 from qgis.gui import QgsMessageBar
 
+from . import utils
+
 
 class ExportGeorefRasterCommand(object):
     def __init__(self, iface):
@@ -25,10 +27,9 @@ class ExportGeorefRasterCommand(object):
     def exportGeorefRaster(
         self, layer, rasterPath, isPutRotationInWorldFile, isExportOnlyWorldFile
     ):
-        baseRasterFilePath, rasterFormat = os.path.splitext(rasterPath)
-        rasterFormat = rasterFormat.lstrip(".").lower()
-        if rasterFormat == "tiff":
-            rasterFormat = "tif"
+        baseRasterFilePath, _ = os.path.splitext(rasterPath)
+        # suppose supported format already checked
+        rasterFormat = utils.imageFormat(rasterPath)
 
         try:
             originalWidth = layer.image.width()
@@ -131,9 +132,6 @@ class ExportGeorefRasterCommand(object):
             with open(worldFilePath, "w") as writer:
                 # order is as described at
                 # http://webhelp.esri.com/arcims/9.3/General/topics/author_world_files.htm
-                # TODO changed since original version of this code
-                # TODO d b reversed; abdecf used to work I think; change in GDAL ?
-                # TODO or bug here ?
                 writer.write(
                     "%.13f\n%.13f\n%.13f\n%.13f\n%.13f\n%.13f" % (a, d, b, e, c, f)
                 )

@@ -43,3 +43,11 @@ def tryfloat(strF):
         return f
     except ValueError:
         return None
+
+
+def imageFormat(path):
+    _, extension = os.path.splitext(path)
+    extension = extension.lstrip(".").lower()
+    if extension == "tiff":
+        extension = "tif"
+    return extension

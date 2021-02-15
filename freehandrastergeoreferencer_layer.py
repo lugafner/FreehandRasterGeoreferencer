@@ -204,23 +204,26 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
                 del loadErrorDialog
 
-            fileInfo = QFileInfo(filepath)
-            ext = fileInfo.suffix()
-            if ext == "pdf":
+            imageFormat = utils.imageFormat(filepath)
+            if imageFormat == "pdf":
                 s = QSettings()
                 oldValidation = s.value("/Projections/defaultBehavior")
                 s.setValue(
                     "/Projections/defaultBehavior", "useGlobal"
                 )  # for not asking about crs
+                fileInfo = QFileInfo(filepath)
                 path = fileInfo.filePath()
                 baseName = fileInfo.baseName()
                 layer = QgsRasterLayer(path, baseName)
                 self.image = layer.previewAsImage(QSize(layer.width(), layer.height()))
                 s.setValue("/Projections/defaultBehavior", oldValidation)
             else:
-                reader = QImageReader(filepath)
-                has_corrected = self.preCheckImage()
+                has_corrected = False
+                if imageFormat == "tif":
+                    # other than TIFF => assumes can be loaded by Qt
+                    has_corrected = self.preCheckImage()
                 if has_corrected:
+                    # image already loaded by preCheckImage
                     self.showBarMessage(
                         "Raster changed",
                         "Raster content has been transformed for display in the "
@@ -230,6 +233,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                         10,
                     )
                 else:
+                    reader = QImageReader(filepath)
                     self.image = reader.read()
 
             self.initialized = True
@@ -597,7 +601,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
     def drawRaster(self, renderContext):
         painter = renderContext.painter()
-        # painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
         self.map2pixel = renderContext.mapToPixel()
 
