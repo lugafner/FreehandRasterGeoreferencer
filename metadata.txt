@@ -3,7 +3,7 @@ name = Freehand raster georeferencer
 qgisMinimumVersion=3.0
 description = Interactive georeferencing of rasters
 about = Tools to georeference a raster interactively (move, rotate, scale, export...)
-version = 0.7.1
+version = 0.8.0
 author = Guilhem Vellut
 email = g@vellut.com
 tags = raster,georeferencing
@@ -15,8 +15,13 @@ experimental = False
 deprecated = False
 category = Raster
 changelog = 
+    0.8.0
+        * FIX #32 Correct issue with the toggling of map tools
+        * FIX #35 FIX #38 Add some transformation to the raster if type not directly suppoted by Qt
+        * FIX #36 Change rotation to allow 3 decimals
+        * FIX #39 Support opening of TIFF files with .tifF extension
     0.7.1
-        * Added a setTransformContext method to plugin layer FIX #30
+        * FIX #30 Added a setTransformContext method to plugin layer
     0.7.0
         * Add LZW compression when writing TIFF
         * Solved an issue with the rendering of large rasters when rotated and zoomed out
