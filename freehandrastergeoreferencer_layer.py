@@ -289,12 +289,12 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
             for i in range(nbands):
                 band_pixels = pixels[i]
                 bands[i] = gdal_utils.to_byte(band_pixels)
-            # band at the end
-            pixels = np.transpose(bands, [1, 2, 0])
-            pixels = pixels.ravel()
+            pixels = bands
 
         if pixels is not None:
-            # some transformation done
+            # some transformation done# band at the end
+            pixels = np.transpose(pixels, [1, 2, 0])
+            pixels = pixels.ravel()
 
             if nbands == 1:
                 # monochrome
