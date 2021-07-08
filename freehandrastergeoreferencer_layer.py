@@ -186,17 +186,17 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         if self.filepath is not None:
             # not safe...
             self.initializing = True
-            filepath = self.getAbsoluteFilepath()
+            absPath = self.getAbsoluteFilepath()
 
-            if not os.path.exists(filepath):
+            if not os.path.exists(absPath):
                 # TODO integrate with BadLayerHandler ?
-                loadErrorDialog = LoadErrorDialog(filepath)
+                loadErrorDialog = LoadErrorDialog(absPath)
                 result = loadErrorDialog.exec_()
                 if result == 1:
                     # absolute
-                    filepath = loadErrorDialog.lineEditImagePath.text()
+                    absPath = loadErrorDialog.lineEditImagePath.text()
                     # to relative if needed
-                    self.filepath = utils.toRelativeToQGS(filepath)
+                    self.filepath = utils.toRelativeToQGS(absPath)
                     self.setCustomProperty("filepath", self.filepath)
                     QgsProject.instance().setDirty(True)
                 else:
@@ -204,24 +204,21 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
                 del loadErrorDialog
 
-            imageFormat = utils.imageFormat(filepath)
+            imageFormat = utils.imageFormat(absPath)
             if imageFormat == "pdf":
                 s = QSettings()
                 oldValidation = s.value("/Projections/defaultBehavior")
                 s.setValue(
                     "/Projections/defaultBehavior", "useGlobal"
                 )  # for not asking about crs
-                fileInfo = QFileInfo(filepath)
-                path = fileInfo.filePath()
-                baseName = fileInfo.baseName()
-                layer = QgsRasterLayer(path, baseName)
+                layer = QgsRasterLayer(absPath, os.path.basename(absPath))
                 self.image = layer.previewAsImage(QSize(layer.width(), layer.height()))
                 s.setValue("/Projections/defaultBehavior", oldValidation)
             else:
                 has_corrected = False
                 if imageFormat == "tif":
                     # other than TIFF => assumes can be loaded by Qt
-                    has_corrected = self.preCheckImage()
+                    has_corrected = self.preCheckImage(absPath)
                 if has_corrected:
                     # image already loaded by preCheckImage
                     self.showBarMessage(
@@ -233,7 +230,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                         10,
                     )
                 else:
-                    reader = QImageReader(filepath)
+                    reader = QImageReader(absPath)
                     self.image = reader.read()
 
             self.initialized = True
@@ -247,7 +244,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
                 # check if image already has georef info
                 # use GDAL
-                dataset = gdal.Open(filepath, gdal.GA_ReadOnly)
+                dataset = gdal.Open(absPath, gdal.GA_ReadOnly)
                 georef = None
                 if dataset:
                     georef = dataset.GetGeoTransform()
@@ -266,12 +263,12 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
 
                     self.commitTransformParameters()
 
-    def preCheckImage(self):
-        nbands, datatype, width, height = gdal_utils.format(self.filepath)
+    def preCheckImage(self, filepath):
+        nbands, datatype, width, height = gdal_utils.format(filepath)
 
         pixels = None
         if nbands not in (1, 3):
-            pixels = gdal_utils.pixels(self.filepath)
+            pixels = gdal_utils.pixels(filepath)
             if nbands > 3:
                 # first 3
                 pixels = pixels[:3]
@@ -283,7 +280,7 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
                 nbands = 1
 
         if datatype != "Byte":
-            pixels = pixels if pixels is not None else gdal_utils.pixels(self.filepath)
+            pixels = pixels if pixels is not None else gdal_utils.pixels(filepath)
 
             bands = np.empty(np.shape(pixels), dtype=np.uint8)
             for i in range(nbands):
@@ -336,18 +333,19 @@ class FreehandRasterGeoreferencerLayer(QgsPluginLayer):
         message_shown = False
         if crs_wkt:
             qcrs = QgsCoordinateReferenceSystem(crs_wkt)
-            if qcrs != self.crs():
+            # TODO check change
+            if qcrs.description() != self.crs().description():
                 # reproject
                 try:
                     self.reprojectTransformParameters(qcrs, self.crs())
                     self.commitTransformParameters()
                     self.showBarMessage(
-                        "Transform parameters changed",
+                        "Transform parameters changed: ",
                         "Found existing georeferencing in raster but "
                         "its CRS does not match the CRS of the map. "
                         "Reprojected the extent.",
                         Qgis.Warning,
-                        5,
+                        25,
                     )
                     message_shown = True
                 except Exception as ex:
