@@ -726,6 +726,11 @@ class FreehandRasterGeoreferencerLayerProvider(QgsDataProvider):
     def name(self):
         # doesn't matter
         return "FreehandRasterGeoreferencerLayerProvider"
+        
+    def isValid(self):
+        # return is valid true, if layer is valid
+        # not necessary for functionality, but prevents a NotImplemented error
+        return self.layer.isValid()
 
 
 class FreehandRasterGeoreferencerLayerRenderer(QgsMapLayerRenderer):
