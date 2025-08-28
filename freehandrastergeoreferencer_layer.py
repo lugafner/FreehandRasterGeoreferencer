@@ -722,6 +722,7 @@ class FreehandRasterGeoreferencerLayerType(QgsPluginLayerType):
 class FreehandRasterGeoreferencerLayerProvider(QgsDataProvider):
     def __init__(self, layer):
         QgsDataProvider.__init__(self, "dummyURI")
+        self.layer = layer
 
     def name(self):
         # doesn't matter
